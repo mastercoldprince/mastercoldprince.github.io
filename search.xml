@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>关于付灵美师姐的贝叶斯相关问题</title>
+    <url>/2021/11/09/hello-world-1/</url>
+    <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>这个问题已经悬而未决好几周了。晚上更新最新结果</p>
+]]></content>
+      <tags>
+        <tag>贝叶斯 叉乘</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hello World</title>
     <url>/2021/10/21/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -25,10 +34,5 @@
       <tags>
         <tag>1</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>hello-world</title>
-    <url>/2021/11/09/hello-world-1/</url>
-    <content><![CDATA[]]></content>
   </entry>
 </search>
