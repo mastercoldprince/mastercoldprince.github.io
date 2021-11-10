@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>关于付灵美师姐的贝叶斯相关问题</title>
-    <url>/2021/11/09/hello-world-1/</url>
-    <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>这个问题已经悬而未决好几周了。晚上更新最新结果</p>
-]]></content>
+    <title>test</title>
+    <url>/2021/11/09/test/</url>
+    <content><![CDATA[]]></content>
       <tags>
-        <tag>贝叶斯 叉乘</tag>
+        <tag>1</tag>
       </tags>
   </entry>
   <entry>
@@ -26,13 +25,5 @@
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
-  </entry>
-  <entry>
-    <title>test</title>
-    <url>/2021/11/09/test/</url>
-    <content><![CDATA[]]></content>
-      <tags>
-        <tag>1</tag>
-      </tags>
   </entry>
 </search>
