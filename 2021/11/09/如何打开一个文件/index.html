@@ -20,20 +20,21 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":5,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="LINUX系统调用源码分析关于打开文件Linux中打开文件是通过open系统调用实现，其函数中调用了do_sys_open()函数完成打开功能，所以下面主要分析do_sys_open()函数，首先先看下open系统调用的入口函数，再具体看do_sys_open()函数： SYSCALL_DEFINE3(open, const char __user *, filename, int, flags,">
+  <meta name="description" content="LINUX系统调用源码分析关于open函数open函数主要包含以下两类： int open(const char *pathName, int flags); &#x2F;&#x2F; 打开文件int open(const char *pathName, int flags, mode_t mode); &#x2F;&#x2F; 创建文件open函数做了两件事：将用户进程 task_struct（进程结构） 中的filp[20] 与内核">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用场景分析--打开文件">
 <meta property="og:url" content="http://example.com/2021/11/09/%E5%A6%82%E4%BD%95%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6/index.html">
 <meta property="og:site_name" content="Spiritual Time House">
-<meta property="og:description" content="LINUX系统调用源码分析关于打开文件Linux中打开文件是通过open系统调用实现，其函数中调用了do_sys_open()函数完成打开功能，所以下面主要分析do_sys_open()函数，首先先看下open系统调用的入口函数，再具体看do_sys_open()函数： SYSCALL_DEFINE3(open, const char __user *, filename, int, flags,">
+<meta property="og:description" content="LINUX系统调用源码分析关于open函数open函数主要包含以下两类： int open(const char *pathName, int flags); &#x2F;&#x2F; 打开文件int open(const char *pathName, int flags, mode_t mode); &#x2F;&#x2F; 创建文件open函数做了两件事：将用户进程 task_struct（进程结构） 中的filp[20] 与内核">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2021/11/pics/flip.png">
 <meta property="og:image" content="http://example.com/2021/11/09/%E5%A6%82%E4%BD%95%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6/index.html#">
 <meta property="article:published_time" content="2021-11-09T02:18:06.000Z">
 <meta property="article:modified_time" content="2021-11-10T07:18:06.000Z">
 <meta property="article:author" content="coldprince">
 <meta property="article:tag" content="linux源码">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2021/11/09/%E5%A6%82%E4%BD%95%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6/index.html#">
+<meta name="twitter:image" content="http://example.com/2021/11/pics/flip.png">
 
 <link rel="canonical" href="http://example.com/2021/11/09/%E5%A6%82%E4%BD%95%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6/">
 
@@ -238,152 +239,60 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="LINUX系统调用源码分析"><a href="#LINUX系统调用源码分析" class="headerlink" title="LINUX系统调用源码分析"></a>LINUX系统调用源码分析</h1><h3 id="关于打开文件"><a href="#关于打开文件" class="headerlink" title="关于打开文件"></a>关于打开文件</h3><p>Linux中打开文件是通过open系统调用实现，其函数中调用了do_sys_open()函数完成打开功能，所以下面主要分析do_sys_open()函数，首先先看下open系统调用的入口函数，再具体看do_sys_open()函数：</p>
+        <h1 id="LINUX系统调用源码分析"><a href="#LINUX系统调用源码分析" class="headerlink" title="LINUX系统调用源码分析"></a>LINUX系统调用源码分析</h1><h3 id="关于open函数"><a href="#关于open函数" class="headerlink" title="关于open函数"></a>关于open函数</h3><p>open函数主要包含以下两类：</p>
+<p>int open(const char *pathName, int flags); // 打开文件<br>int open(const char *pathName, int flags, mode_t mode); <em>// 创建文件</em><br>open函数做了两件事：<br>将用户进程 task_struct（进程结构） 中的filp[20] 与内核中的file_table[64] 进行挂接。<br>将用户进程需要打开的文件对应的inode节点在file_table[64] 中进行登记。</p>
+<ul>
+<li>操作系统根据用户进程的需求来操作文件，内核通过 *filp[20] 掌控每一个进程可以打开的文件，既可以打开多个不同的文件，也可以多次打开同一个文件，每打开一次文件（不论是否是同一个文件），就要在 *filp[20] 占用一个项记录指针，所以每一个进程可以同时打开文件的次数不能超过20次；</li>
+<li>操作系统中的file_table[64] 是管理所有进程打开文件的数据结构， 不但记录了不同进程打开不同的文件，也记录了不同进程打开同一个文件，甚至记录了同一个进程多次打开一个文件。与filp[20] 类似，只要打开一次文件，就要在file_table[64] 中记录；</li>
+<li>文件中的i节点是记载文件属性的最关键的数据结构，在操作系统中i节点和文件是一一对应的，找到i节点，就意味着找到唯一的文件。内核通过inode_table[32] 掌控正在使用的文件i节点，每个被使用的文件i节点都要记录在其中。</li>
+</ul>
+<p>*<em>打开文件的本质就是要建立 <em>filp[20] file_table[64] inode_table[32] 三者之间的关系。</em></em></p>
+<p><img src="../../pics/flip.png" alt="关系" title="关系"></p>
+<h3 id="关于打开文件"><a href="#关于打开文件" class="headerlink" title="关于打开文件"></a>关于打开文件</h3><p>Linux中打开文件是通过open系统调用实现，其函数中调用了do_sys_open()函数完成打开功能，首先先看下open系统调用的入口函数，再具体看do_sys_open()函数：</p>
 <p>SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, int, mode)</p>
-<p>{</p>
-<pre><code>     long ret;
-
-
-
-     if (force_o_largefile())
-
+<p>{<br>         long ret;</p>
+<pre><code>     if (force_o_largefile())
                flags |= O_LARGEFILE;
 
-
-
      ret = do_sys_open(AT_FDCWD, filename, flags, mode);
-
      /* avoid REGPARM breakage on x86: */
-
      asmlinkage_protect(3, ret, filename, flags, mode);
-
      return ret;
 </code></pre>
 <p>}</p>
-<p>long do_sys_open(int dfd, const char __user *filename, int flags, int mode)</p>
-<p>{</p>
-<p>/<em>获取文件名称，由getname()函数完成，其内部首先创建存取文件名称的空间，然后</em>从用户空间把文件名拷贝过来*/</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">do_sys_open</span><span class="params">(<span class="keyword">int</span> dfd, <span class="keyword">const</span> <span class="keyword">char</span> __user *filename, <span class="keyword">int</span> flags, <span class="keyword">int</span> mode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="comment">/*获取文件名称，由getname()函数完成，其内部首先创建存取文件名称的空间，然后*从用户空间把文件名拷贝过来*/</span></span><br></pre></td></tr></table></figure>
+
 <pre><code>     char *tmp = getname(filename);
-
      int fd = PTR_ERR(tmp);
-
-
 
      if (!IS_ERR(tmp)) &#123;
 </code></pre>
 <p>/<em>获取一个可用的fd，此函数调用alloc_fd()函数从fd_table中获取一个可用fd,并做些简单初始化，此函数内部实现比较简单，此次分析不细看</em>/</p>
 <pre><code>               fd = get_unused_fd_flags(flags);
-
                if (fd &gt;= 0) &#123;
 </code></pre>
-<p>/<em>fd获取成功则开始打开文件，此函数是主要完成打开功能的函数，在此先放一放，下面详细分析</em>/</p>
+<p>/<em>fd获取成功则开始打开文件，此函数是主要完成打开功能的函数</em>/</p>
 <pre><code>                        struct file *f = do_filp_open(dfd, tmp, flags, mode, 0);
-
                         if (IS_ERR(f)) &#123;
-
                                  /*打开失败，释放fd*/
-
                                  put_unused_fd(fd);
-
                                  fd = PTR_ERR(f);
-
                         &#125; else &#123;
-
                                  /*文件如果已经被打开了，调用fsnotify_open()函数*/
-
                                  fsnotify_open(f-&gt;f_path.dentry);
-
                                  /*将文件指针安装在fd数组中*/
-
                                  fd_install(fd, f);
-
                         &#125;
-
                &#125;
-
                /*释放放置从用户空间拷贝过来的文件名的存储空间*/
-
                putname(tmp);
-
      &#125;
-
-     return fd;
+     return fd;&#125;
 </code></pre>
-<p>}</p>
-<p>接下来即将进入到打开功能的真正实现功能的函数do_filp_open()函数：</p>
-<p>struct file *do_filp_open(int dfd, const char *pathname,</p>
-<pre><code>               int open_flag, int mode, int acc_mode)
-</code></pre>
-<p>{</p>
-<pre><code>     /*
+<p>打开功能的真正实现功能的函数do_filp_open()函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">struct file *<span class="title">do_filp_open</span><span class="params">(<span class="keyword">int</span> dfd, <span class="keyword">const</span> <span class="keyword">char</span> *pathname,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="keyword">int</span> open_flag, <span class="keyword">int</span> mode, <span class="keyword">int</span> acc_mode)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">         <span class="comment">/*改变参数flag的值，具体做法是flag+1*/</span></span><br><span class="line">         <span class="keyword">int</span> flag = open_to_namei_flags(open_flag);</span><br><span class="line">         <span class="keyword">int</span> force_reval = <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">         <span class="comment">/*根据__O_SYNC标志来设置O_DSYNC 标志，用以防止恶意破坏程序*/</span></span><br><span class="line">         <span class="keyword">if</span> (open_flag &amp; __O_SYNC)</span><br><span class="line">                   open_flag |= O_DSYNC;</span><br><span class="line">         <span class="comment">/*设置访问权限*/</span></span><br><span class="line">         <span class="keyword">if</span> (!acc_mode)</span><br><span class="line">                   acc_mode = MAY_OPEN | ACC_MODE(open_flag);</span><br><span class="line"> </span><br><span class="line">         <span class="comment">/*根据 O_TRUNC标志设置写权限 */</span></span><br><span class="line">         <span class="keyword">if</span> (flag &amp; O_TRUNC)</span><br><span class="line">                   acc_mode |= MAY_WRITE;</span><br><span class="line"> </span><br><span class="line">         <span class="comment">/* 设置O_APPEND 标志*/</span></span><br><span class="line">         <span class="keyword">if</span> (flag &amp; O_APPEND)</span><br><span class="line">                   acc_mode |= MAY_APPEND;</span><br><span class="line"> </span><br><span class="line">         <span class="comment">/*如果不是创建文件*/</span></span><br><span class="line">         <span class="keyword">if</span> (!(flag &amp; O_CREAT)) &#123;</span><br><span class="line">                   <span class="comment">/*返回特定的file结构体指针*/</span></span><br><span class="line">                   filp = get_empty_filp();</span><br><span class="line"> </span><br><span class="line">                   <span class="keyword">if</span> (filp == <span class="literal">NULL</span>)</span><br><span class="line">                            <span class="keyword">return</span> ERR_PTR(-ENFILE);</span><br><span class="line">                   <span class="comment">/*填充nameidata 结构*/</span></span><br><span class="line">                   nd.intent.open.file = filp;</span><br><span class="line">                   filp-&gt;f_flags = open_flag;</span><br><span class="line">                   nd.intent.open.flags = flag;</span><br><span class="line">                   nd.intent.open.create_mode = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
 
-     *…若干变量声明
-
-     */
-
-     /*改变参数flag的值，具体做法是flag+1*/
-
-     int flag = open_to_namei_flags(open_flag);
-
-     int force_reval = 0;
-
-
-
-     /*根据__O_SYNC标志来设置O_DSYNC 标志，用以防止恶意破坏程序*/
-
-     if (open_flag &amp; __O_SYNC)
-
-               open_flag |= O_DSYNC;
-
-     /*设置访问权限*/
-
-     if (!acc_mode)
-
-               acc_mode = MAY_OPEN | ACC_MODE(open_flag);
-
-
-
-     /*根据 O_TRUNC标志设置写权限 */
-
-     if (flag &amp; O_TRUNC)
-
-               acc_mode |= MAY_WRITE;
-
-
-
-     /* 设置O_APPEND 标志*/
-
-     if (flag &amp; O_APPEND)
-
-               acc_mode |= MAY_APPEND;
-
-
-
-     /*如果不是创建文件*/
-
-     if (!(flag &amp; O_CREAT)) &#123;
-
-               /*返回特定的file结构体指针*/
-
-               filp = get_empty_filp();
-
-
-
-               if (filp == NULL)
-
-                        return ERR_PTR(-ENFILE);
-
-               /*填充nameidata 结构*/
-
-               nd.intent.open.file = filp;
-
-               filp-&gt;f_flags = open_flag;
-
-               nd.intent.open.flags = flag;
-
-               nd.intent.open.create_mode = 0;
-</code></pre>
-<p>/<em>当内核要访问一个文件的时候，第一步要做的是找到这个文件，而查找文件的过程在vfs里面是由path_lookup或者path_lookup_open函数来完成的。这两个函数将用户传进来的字符串表示的文件路径转换成一个dentry结构，并建立好相应的inode和file结构，将指向file的描述符返回用户。用户随后通过文件描述符，来访问这些数据结构</em>/<br>                   error = do_path_lookup(dfd, pathname,</p>
+<p>当内核要访问一个文件的时候，第一步要做的是找到这个文件，而查找文件的过程在vfs里面是由path_lookup或者path_lookup_open函数来完成的。这两个函数将用户传进来的字符串表示的文件路径转换成一个dentry结构，并建立好相应的inode和file结构，将指向file的描述符返回用户。用户随后通过文件描述符，来访问这些数据结构<br>                   error = do_path_lookup(dfd, pathname,</p>
 <pre><code>                                           lookup_flags(flag)|LOOKUP_OPEN, &amp;nd);
 
                if (IS_ERR(nd.intent.open.file)) &#123;
@@ -429,7 +338,7 @@
 
                nd.flags |= LOOKUP_REVAL;
 </code></pre>
-<p>/*这个函数相当重要，就如源代码注释的那样，是整个NFS的名字解析函数，其实也是NFS得以构筑的函数。这里作一重点分析。这里先作一个综述。该函数采用一个for循环，对name路径根据目录的层次，一层一层推进，直到终点或失败。在推进的过程中，一步步建立了目录树的dentry和对应的inode */</p>
+<p>/*这个函数相当重要，就如源代码注释的那样，是整个NFS的名字解析函数，其实也是NFS得以构筑的函数该函数采用一个for循环，对name路径根据目录的层次，一层一层推进，直到终点或失败。在推进的过程中，一步步建立了目录树的dentry和对应的inode */</p>
 <pre><code>     error = path_walk(pathname, &amp;nd);
 
      if (error) &#123;
@@ -820,33 +729,9 @@
 <p>在内核中要打开一个文件，首先应该找到这个文件，而查找文件的过程在vfs里面是由do_path_lookup或者path_lookup_open函数来完成的。这两个函数将用户传进来的字符串表示的文件路径转换成一个dentry结构，并建立好相应的inode和file结构，将指向file的描述符返回用户。用户随后通过文件描述符，来访问这些数据结构。</p>
 <p>基本函数流程及调用方式如下所示：</p>
 <p>打开过程首先是open系统调用访问SYSCALL_DEFINE3函数，然后调用do_sys_open 函数完成主要功能，再调用函数do_filp_open完成主要的打开功能，下面详细看下do_filp_open中调用的do_path_lookup主要过程：</p>
-<p>staic int  do_path_lookup(int dfd,const char</p>
-<p>*name,unsigned int flags,strucy nameidata *nd)</p>
-<p>{</p>
-<pre><code>       int retval=path_init(dfd,name,flags,nd);
-</code></pre>
-<p>//设置nd-&gt;root=根路径（绝对地址）或者当前工作目录（相对地址） 。</p>
-<p>//这一步做完了后，内核会建立一些数据结构（dentry,inode）来初始化查找的起点</p>
-<pre><code>       if(!retval)
-
-                   retval = path_walk(name,nd);
-</code></pre>
-<p>//path_walk,会遍历路径的每一份量，也就是用“/”分隔开的每一部分，</p>
-<p>//最中找到name指向的文件，walk的意思就是walk path的每一个组分（component）</p>
-<pre><code>    &#125;
-</code></pre>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">staic <span class="keyword">int</span>  <span class="title">do_path_lookup</span><span class="params">(<span class="keyword">int</span> dfd,<span class="keyword">const</span> <span class="keyword">char</span></span></span></span><br><span class="line"><span class="params"><span class="function"></span></span></span><br><span class="line"><span class="params"><span class="function">*name,<span class="keyword">unsigned</span> <span class="keyword">int</span> flags,strucy nameidata *nd)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">int</span> retval=path_init(dfd,name,flags,nd);</span><br><span class="line"></span><br><span class="line"><span class="comment">//设置nd-&gt;root=根路径（绝对地址）或者当前工作目录（相对地址） 。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//这一步做完了后，内核会建立一些数据结构（dentry,inode）来初始化查找的起点</span></span><br><span class="line"></span><br><span class="line">           <span class="keyword">if</span>(!retval)</span><br><span class="line"></span><br><span class="line">                       retval = path_walk(name,nd);</span><br><span class="line"></span><br><span class="line"><span class="comment">//path_walk,会遍历路径的每一份量，也就是用“/”分隔开的每一部分，</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//最中找到name指向的文件，walk的意思就是walk path的每一个组分（component）</span></span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"> </span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>我们进一步看看path_walk</p>
-<p>int path_walk(const char *name,struct nameidata *nd)</p>
-<p>{</p>
-<pre><code>        return link_path_walk(name,nd);
-</code></pre>
-<p>//path_walk其实相当于直接调用link_path_walk来完成工作</p>
-<p>}</p>
-<p>link_path_walk的主要工作是有其内部函数__link_path_walk 来完成的</p>
-<pre><code>      result = __link_path_walk(name,nd)
-
-    
-</code></pre>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">path_walk</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *name,struct nameidata *nd)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> link_path_walk(name,nd);</span><br><span class="line"></span><br><span class="line"><span class="comment">//path_walk其实相当于直接调用link_path_walk来完成工作</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">link_path_walk的主要工作是有其内部函数__link_path_walk 来完成的</span><br><span class="line"></span><br><span class="line">          result = __link_path_walk(name,nd)</span><br><span class="line"></span><br><span class="line">        </span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>至此我们转向最重要的代码__link_walk_path,该函数把传进来的字符串name，也就是用户指定的路径，按路径分隔符分解成一系列小的component。比如用户说，我要找/path/to/dest这个文件，那么我们的文件系统就会按path,to,dest一个一个来找，知道最后一个分量是文件或者查找完成。他找的时候，会先用path_init初始化过的根路径去找第一个分量，也就是path。然后用path的dentry-&gt;d_inode去找to，这样循环到最后一个。注意，内核会缓存找到的路径分量，所以往往只有第一次访问一个路径的时候，才会去访问磁盘，后面的访问会直接从缓存里找，下面会看到，很多与页告诉缓存打交道的代码。但不管怎样，第一遍查找总是会访问磁盘的。</p>
 <p>static int __link_path_walk(const char *name,strucy</p>
 <p>nameidata *nd)</p>
@@ -963,7 +848,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#LINUX%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">LINUX系统调用源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B6"><span class="nav-number">1.0.1.</span> <span class="nav-text">关于打开文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%96%87%E4%BB%B6%E5%88%86%E7%B1%BB"><span class="nav-number">1.0.2.</span> <span class="nav-text">关于文件分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Linux%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%98%AF%E5%9F%BA%E4%BA%8EARMv8%E7%9A%84%E5%BC%82%E5%B8%B8%E6%A8%A1%E5%BC%8F"><span class="nav-number">1.0.3.</span> <span class="nav-text">Linux系统调用是基于ARMv8的异常模式</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#LINUX%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">1.</span> <span class="nav-text">LINUX系统调用源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Eopen%E5%87%BD%E6%95%B0"><span class="nav-number">1.0.1.</span> <span class="nav-text">关于open函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B6"><span class="nav-number">1.0.2.</span> <span class="nav-text">关于打开文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E6%96%87%E4%BB%B6%E5%88%86%E7%B1%BB"><span class="nav-number">1.0.3.</span> <span class="nav-text">关于文件分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Linux%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%98%AF%E5%9F%BA%E4%BA%8EARMv8%E7%9A%84%E5%BC%82%E5%B8%B8%E6%A8%A1%E5%BC%8F"><span class="nav-number">1.0.4.</span> <span class="nav-text">Linux系统调用是基于ARMv8的异常模式</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -977,7 +862,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
