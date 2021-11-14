@@ -20,26 +20,23 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":5,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="文件描述符、文件指针、索引节点1、文件描述符 Fd当进程打开文件或创建新文件时，内核会返回一个文件描述符（非负整数），用来指向被打开的文件，所有执行I&#x2F;O操作的系统调用（read、write）都会通过文件描述符。 文件描述符可以理解为进程文件描述表这个表的索引，或者把文件描述表看做一个数组的话，文件描述符可以看做是数组的下标。当需要进行I&#x2F;O操作的时候，会传入fd作为参数，先从进程文件描述符表查找">
+  <meta name="description" content="文件系统详解–从操作系统角度来说在UNIX系统中，把一切资源都看作是文件，包括硬件设备。UNIX系统把每个硬件都看成是一个文件，通常称为设备文件，这样用户就可以用读写文件的方式实现对硬件的访问。         UNIX 权限模型也是围绕文件的概念来建立的，所以对设备也就可以同样处理了。  硬盘驱动    常见的硬盘类型有PATA, SATA和AHCI等，在Linux系统中，对不同硬盘所提供的驱动">
 <meta property="og:type" content="article">
-<meta property="og:title" content="文件描述符、文件指针、索引节点">
-<meta property="og:url" content="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/index.html">
+<meta property="og:title" content="文件系统详解">
+<meta property="og:url" content="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%A6%E8%A7%A3/index.html">
 <meta property="og:site_name" content="Spiritual Time House">
-<meta property="og:description" content="文件描述符、文件指针、索引节点1、文件描述符 Fd当进程打开文件或创建新文件时，内核会返回一个文件描述符（非负整数），用来指向被打开的文件，所有执行I&#x2F;O操作的系统调用（read、write）都会通过文件描述符。 文件描述符可以理解为进程文件描述表这个表的索引，或者把文件描述表看做一个数组的话，文件描述符可以看做是数组的下标。当需要进行I&#x2F;O操作的时候，会传入fd作为参数，先从进程文件描述符表查找">
+<meta property="og:description" content="文件系统详解–从操作系统角度来说在UNIX系统中，把一切资源都看作是文件，包括硬件设备。UNIX系统把每个硬件都看成是一个文件，通常称为设备文件，这样用户就可以用读写文件的方式实现对硬件的访问。         UNIX 权限模型也是围绕文件的概念来建立的，所以对设备也就可以同样处理了。  硬盘驱动    常见的硬盘类型有PATA, SATA和AHCI等，在Linux系统中，对不同硬盘所提供的驱动">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/2021/11/pics/Fd.jpg">
-<meta property="og:image" content="http://example.com/2021/11/pics/Fdbetween.jpg">
-<meta property="og:image" content="http://example.com/2021/11/pics/Sector.png">
-<meta property="og:image" content="http://example.com/2021/11/pics/Sector2.png">
-<meta property="og:image" content="http://example.com/2021/11/pics/Sector3.png">
+<meta property="og:image" content="http://example.com/2021/11/pics/operator.png">
+<meta property="og:image" content="http://example.com/2021/11/pics/operator2">
 <meta property="article:published_time" content="2021-11-09T02:18:06.000Z">
 <meta property="article:modified_time" content="2021-11-10T07:18:06.000Z">
 <meta property="article:author" content="coldprince">
 <meta property="article:tag" content="linux源码">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/2021/11/pics/Fd.jpg">
+<meta name="twitter:image" content="http://example.com/2021/11/pics/operator.png">
 
-<link rel="canonical" href="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/">
+<link rel="canonical" href="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%A6%E8%A7%A3/">
 
 
 <script id="page-configurations">
@@ -52,7 +49,7 @@
   };
 </script>
 
-  <title>文件描述符、文件指针、索引节点 | Spiritual Time House</title>
+  <title>文件系统详解 | Spiritual Time House</title>
   
 
 
@@ -198,7 +195,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%A6%E8%A7%A3/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -211,7 +208,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          文件描述符、文件指针、索引节点
+          文件系统详解
         </h1>
 
         <div class="post-meta">
@@ -242,19 +239,28 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="文件描述符、文件指针、索引节点"><a href="#文件描述符、文件指针、索引节点" class="headerlink" title="文件描述符、文件指针、索引节点"></a>文件描述符、文件指针、索引节点</h1><h2 id="1、文件描述符-Fd"><a href="#1、文件描述符-Fd" class="headerlink" title="1、文件描述符 Fd"></a>1、文件描述符 Fd</h2><p>当进程打开文件或创建新文件时，内核会返回一个文件描述符（非负整数），用来指向被打开的文件，所有执行I/O操作的系统调用（read、write）都会通过文件描述符。</p>
-<p>文件描述符可以理解为进程文件描述表这个表的索引，或者把文件描述表看做一个数组的话，文件描述符可以看做是数组的下标。当需要进行I/O操作的时候，会传入fd作为参数，先从进程文件描述符表查找该fd对应的那个条目，取出对应的那个已经打开的文件的句柄，根据文件句柄指向，去系统fd表中查找到该文件指向的inode，从而定位到该文件的真正位置，从而进行I/O操作。<br><img src="../../pics/Fd.jpg" alt="三张表的关系图" title="三张表的关系图"><br>**特点:<br>**<br>每个文件描述符会与一个打开的文件相对应<br>不同的文件描述符也可能指向同一个文件<br>相同的文件可以被不同的进程打开，也可以在同一个进程被多次打开</p>
-<h2 id="2、系统级的文件描述符表"><a href="#2、系统级的文件描述符表" class="headerlink" title="2、系统级的文件描述符表"></a>2、系统级的文件描述符表</h2><p>内核对系统所有打开的文件维护了一个打开文件表，表中每一项称为打开文件句柄，一个打开文件句柄描述了一个打开文件的全部信息</p>
-<ul>
-<li>当前文件偏移量（调用read()和write()时更新，或使用lseek()直接修改）</li>
-<li>打开文件时所使用的状态标识（即，open()的flags参数）</li>
-<li>文件访问模式（如调用open()时所设置的只读模式、只写模式或读写模式）</li>
-<li>与信号驱动相关的设置</li>
-<li>对该文件i-node对象的引用</li>
-<li>文件类型（例如：常规文件、套接字或FIFO）和访问权限</li>
-<li>一个指针，指向该文件所持有的锁列表</li>
-<li>文件的各种属性，包括文件大小以及与不同类型操作相关的时间戳<h2 id="3、文件系统的inode表"><a href="#3、文件系统的inode表" class="headerlink" title="3、文件系统的inode表"></a>3、文件系统的inode表</h2>每个文件系统会为存储于其上的所有文件维护一个inode表<br>文件描述符表、打开文件表、inode表之间的关系：<br><img src="../../pics/Fdbetween.jpg" alt="三者之间的关系" title="三者之间的关系"><br>进程A文件描述符1和20指向同一个打开文件句柄，是因为多次调用open()等函数打开同一个文件导致。<br>进程A的文件描述符2和进程B的文件描述符2指向同一个打开文件句柄可能是因为调用fork()后出现的，子进程会继承父进程的打开文件描述符表，也就是子进程继承父进程打开文件。；或者某进程通过unix域套接字将一个打开的文件描述符传递给另一个进程；或者不通进程独自调用open函数打开同一个文件是正好分配到与其他进程打开该文件描述符一样。<br>进程A的描述符0和进程B的描述符3分别指向不同的打开文件句柄，但这些句柄均指向i-node表的相同条目，即同一个文件，发生这种情况是因为每个进程各自对同一个文件发起了open()调用。同一个进程两次打开同一个文件，也会发生类似情况。<h2 id="补充：磁盘结构"><a href="#补充：磁盘结构" class="headerlink" title="补充：磁盘结构"></a>补充：磁盘结构</h2>文件储存在硬盘上，硬盘的最小存储单位叫做”扇区”（Sector）。每个扇区储存512字节（相当于0.5KB）。<br>操作系统读取硬盘的时候，不会一个个扇区地读取，这样效率太低，而是一次性连续读取多个扇区，即一次性读取一个”块”（block）。这种由多个扇区组成的”块”，是文件存取的最小单位。”块”的大小，最常见的是4KB，即连续八个 sector组成一个 block。<br><img src="../../pics/Sector.png" alt="扇区" title="扇区"><br><img src="../../pics/Sector2.png" alt="扇区2" title="扇区2"><br><img src="../../pics/Sector3.png" alt="扇区3" title="扇区3"><br>由上，可用（柱面号，盘面号，扇区号）来定位任意一个“磁盘块”，我们经常提到文件数据存放在外存中的几号块（逻辑地址），这个块号就可以转换成（柱面号，盘面号，扇区号）的地址形式。<br>可根据该地址读取一个“块”，操作如下：<br>① 根据“柱面号”移动磁臂，让磁头指向指定柱面（也称磁道）<br>② 激活指定盘面对应的磁头；<br>③ 磁盘旋转的过程中，指定的扇区会从磁头下面划过，这样就完成了对指定扇区的读/写</li>
-</ul>
+        <h1 id="文件系统详解–从操作系统角度来说"><a href="#文件系统详解–从操作系统角度来说" class="headerlink" title="文件系统详解–从操作系统角度来说"></a>文件系统详解–从操作系统角度来说</h1><p>在UNIX系统中，把一切资源都看作是文件，包括硬件设备。UNIX系统把每个硬件都看成是一个文件，通常称为设备文件，这样用户就可以用读写文件的方式实现对硬件的访问。<br>         <strong>UNIX 权限模型也是围绕文件的概念来建立的，所以对设备也就可以同样处理了。</strong><br><img src="../../pics/operator.png" alt="图片" title="图片"></p>
+<ol>
+<li>硬盘驱动</li>
+</ol>
+<p>  常见的硬盘类型有PATA, SATA和AHCI等，在Linux系统中，对不同硬盘所提供的驱动模块一般都存放在内核目录树drivers/ata中，而对于一般通用的硬盘驱动，也许会直接被编译到内核中，而不会以模块的方式出现，可以通过查看/boot/config-xxx.xxx文件来确认：</p>
+<p>  CONFIG_SATA_AHCI=y</p>
+<ol start="2">
+<li>General Block Device Layer</li>
+</ol>
+<p>  这一层的作用，正是解答了上面提出的第一个问题，不同的硬盘驱动，会提供不同的IO接口，内核认为这种杂乱的接口，不利于管理，需要把这些接口抽象一下，形成一个统一的对外接口，这样，不管你是什么硬盘，什么驱动，对外而言，它们所提供的IO接口没什么区别，都一视同仁的被看作块设备来处理。</p>
+<p>  所以，如果在一层做的任何修改，将会直接影响到所有文件系统，不管是ext3,ext4还是其它文件系统，只要在这一层次做了某种修改，对它们都会产生影响。</p>
+<ol start="3">
+<li>文件系统</li>
+</ol>
+<p>  文件系统这一层相信大家都再熟悉不过了，目前大多Linux发行版本默认使用的文件系统一般是ext4，另外，新一代的btrfs也呼之欲出，不管什么样的文件系统，都是由一系列的mkfs.xxx命令来创建，如：</p>
+<p>  mkfs.ext4 /dev/sda</p>
+<p>  mkfs.btrfs /dev/sdb</p>
+<p>  内核所支持的文件系统类型，在内核目录树 fs 目录中。</p>
+<ol start="4">
+<li>虚拟文件系统(VFS)</li>
+</ol>
+<p>  Virtual File System这一层，正是用来解决上面提出的第二个问题，试想，当我们通过mkfs.xxx系列命令创建了很多不同的文件系统，但这些文件系统都有各自的API接口，而用户想要的是，不管你是什么API，他们只关心mount/umount，或open/close等操作。<br>  所以，VFS就把这些不同的文件系统做一个抽象，提供统一的API访问接口，这样，用户空间就不用关心不同文件系统中不一样的API了。VFS所提供的这些统一的API，再经过System Call包装一下，用户空间就可以经过SCI的系统调用来操作不同的文件系统。<br>  VFS所提供的常用API有：<br>  mount()， umount() …<br>  open()，close() …<br>  mkdir() …<br><img src="../../pics/operator2" alt="图片" title="图片"><br>Linux启动时，第一个必须挂载的是根文件系统；若系统不能从指定设备上挂载根文件系统，则系统会出错而退出启动。之后可以自动或手动挂载其他的文件系统。因此，一个系统中可以同时存在不同的文件系统。<br>　　不同的文件系统类型有不同的特点，因而根据存储设备的硬件特性、系统需求等有不同的应用场合。在嵌入式Linux应用中，主要的存储设备为RAM(DRAM, SDRAM)和ROM(常采用FLASH存储器)，常用的基于存储设备的文件系统类型包括：jffs2, yaffs, cramfs, romfs, ramdisk, ramfs/tmpfs等。</p>
 
     </div>
 
@@ -273,12 +279,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/11/09/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%A6%E8%A7%A3/" rel="prev" title="文件系统详解">
-      <i class="fa fa-chevron-left"></i> 文件系统详解
+    <a href="/2021/11/09/%E5%A6%82%E4%BD%95%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6/" rel="prev" title="使用场景分析--打开文件">
+      <i class="fa fa-chevron-left"></i> 使用场景分析--打开文件
     </a></div>
       <div class="post-nav-item">
-    <a href="/2021/11/09/linux_build/" rel="next" title="linux系统构建及常用指令">
-      linux系统构建及常用指令 <i class="fa fa-chevron-right"></i>
+    <a href="/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/" rel="next" title="文件描述符、文件指针、索引节点">
+      文件描述符、文件指针、索引节点 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -338,7 +344,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E3%80%81%E6%96%87%E4%BB%B6%E6%8C%87%E9%92%88%E3%80%81%E7%B4%A2%E5%BC%95%E8%8A%82%E7%82%B9"><span class="nav-number">1.</span> <span class="nav-text">文件描述符、文件指针、索引节点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6-Fd"><span class="nav-number">1.1.</span> <span class="nav-text">1、文件描述符 Fd</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E7%B3%BB%E7%BB%9F%E7%BA%A7%E7%9A%84%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E8%A1%A8"><span class="nav-number">1.2.</span> <span class="nav-text">2、系统级的文件描述符表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84inode%E8%A1%A8"><span class="nav-number">1.3.</span> <span class="nav-text">3、文件系统的inode表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A5%E5%85%85%EF%BC%9A%E7%A3%81%E7%9B%98%E7%BB%93%E6%9E%84"><span class="nav-number">1.4.</span> <span class="nav-text">补充：磁盘结构</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%A6%E8%A7%A3%E2%80%93%E4%BB%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%A7%92%E5%BA%A6%E6%9D%A5%E8%AF%B4"><span class="nav-number">1.</span> <span class="nav-text">文件系统详解–从操作系统角度来说</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

@@ -29,6 +29,20 @@
 ]]></content>
   </entry>
   <entry>
+    <title>linux系统构建及常用指令</title>
+    <url>/2021/11/09/linux_build/</url>
+    <content><![CDATA[<h2 id="Linux-2-6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成："><a href="#Linux-2-6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成：" class="headerlink" title="Linux 2.6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成："></a>Linux 2.6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成：</h2><h3 id="1-内核配置：make-menuconfig"><a href="#1-内核配置：make-menuconfig" class="headerlink" title="1.内核配置：make menuconfig"></a>1.内核配置：make menuconfig</h3><h4 id="内核配置"><a href="#内核配置" class="headerlink" title="内核配置"></a>内核配置</h4><p>Linux内核在下载解压后需要先配置然后才能编译。源码树的每个目录下都有一个文件Kconfig,这个分布到各目录的Kconfig构成了一个分布式的内核配置数据库，每个Kconfig分别描述了所属目录源文档相关的内核配置菜单。在执行内核配置命令时，从Kconfig中读出菜单的信息供用户进行选择，配置的命令如下：<br>1）make config：基于文本的最为传统的一行一行的配置命令配置，不推荐使用。</p>
+<p>2）make menuconfig：基于文本选单的配置界面，字符终端下推荐使用。</p>
+<p>3）make xconfig：基于图形窗口模式的配置界面，Xwindow下推荐使用。</p>
+<p>2.内核编译：make</p>
+<p>3.安装模块：make modules_install</p>
+<p>4.安装内核：make install</p>
+]]></content>
+      <tags>
+        <tag>linux使用</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>文件描述符、文件指针、索引节点</title>
     <url>/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/</url>
     <content><![CDATA[<h1 id="文件描述符、文件指针、索引节点"><a href="#文件描述符、文件指针、索引节点" class="headerlink" title="文件描述符、文件指针、索引节点"></a>文件描述符、文件指针、索引节点</h1><h2 id="1、文件描述符-Fd"><a href="#1、文件描述符-Fd" class="headerlink" title="1、文件描述符 Fd"></a>1、文件描述符 Fd</h2><p>当进程打开文件或创建新文件时，内核会返回一个文件描述符（非负整数），用来指向被打开的文件，所有执行I/O操作的系统调用（read、write）都会通过文件描述符。</p>
@@ -44,6 +58,686 @@
 <li>一个指针，指向该文件所持有的锁列表</li>
 <li>文件的各种属性，包括文件大小以及与不同类型操作相关的时间戳<h2 id="3、文件系统的inode表"><a href="#3、文件系统的inode表" class="headerlink" title="3、文件系统的inode表"></a>3、文件系统的inode表</h2>每个文件系统会为存储于其上的所有文件维护一个inode表<br>文件描述符表、打开文件表、inode表之间的关系：<br><img src="../../pics/Fdbetween.jpg" alt="三者之间的关系" title="三者之间的关系"><br>进程A文件描述符1和20指向同一个打开文件句柄，是因为多次调用open()等函数打开同一个文件导致。<br>进程A的文件描述符2和进程B的文件描述符2指向同一个打开文件句柄可能是因为调用fork()后出现的，子进程会继承父进程的打开文件描述符表，也就是子进程继承父进程打开文件。；或者某进程通过unix域套接字将一个打开的文件描述符传递给另一个进程；或者不通进程独自调用open函数打开同一个文件是正好分配到与其他进程打开该文件描述符一样。<br>进程A的描述符0和进程B的描述符3分别指向不同的打开文件句柄，但这些句柄均指向i-node表的相同条目，即同一个文件，发生这种情况是因为每个进程各自对同一个文件发起了open()调用。同一个进程两次打开同一个文件，也会发生类似情况。<h2 id="补充：磁盘结构"><a href="#补充：磁盘结构" class="headerlink" title="补充：磁盘结构"></a>补充：磁盘结构</h2>文件储存在硬盘上，硬盘的最小存储单位叫做”扇区”（Sector）。每个扇区储存512字节（相当于0.5KB）。<br>操作系统读取硬盘的时候，不会一个个扇区地读取，这样效率太低，而是一次性连续读取多个扇区，即一次性读取一个”块”（block）。这种由多个扇区组成的”块”，是文件存取的最小单位。”块”的大小，最常见的是4KB，即连续八个 sector组成一个 block。<br><img src="../../pics/Sector.png" alt="扇区" title="扇区"><br><img src="../../pics/Sector2.png" alt="扇区2" title="扇区2"><br><img src="../../pics/Sector3.png" alt="扇区3" title="扇区3"><br>由上，可用（柱面号，盘面号，扇区号）来定位任意一个“磁盘块”，我们经常提到文件数据存放在外存中的几号块（逻辑地址），这个块号就可以转换成（柱面号，盘面号，扇区号）的地址形式。<br>可根据该地址读取一个“块”，操作如下：<br>① 根据“柱面号”移动磁臂，让磁头指向指定柱面（也称磁道）<br>② 激活指定盘面对应的磁头；<br>③ 磁盘旋转的过程中，指定的扇区会从磁头下面划过，这样就完成了对指定扇区的读/写</li>
 </ul>
+]]></content>
+      <tags>
+        <tag>linux源码</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>文件系统详解</title>
+    <url>/2021/11/09/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%A6%E8%A7%A3/</url>
+    <content><![CDATA[<h1 id="文件系统详解–从操作系统角度来说"><a href="#文件系统详解–从操作系统角度来说" class="headerlink" title="文件系统详解–从操作系统角度来说"></a>文件系统详解–从操作系统角度来说</h1><p>在UNIX系统中，把一切资源都看作是文件，包括硬件设备。UNIX系统把每个硬件都看成是一个文件，通常称为设备文件，这样用户就可以用读写文件的方式实现对硬件的访问。<br>         <strong>UNIX 权限模型也是围绕文件的概念来建立的，所以对设备也就可以同样处理了。</strong><br><img src="../../pics/operator.png" alt="图片" title="图片"></p>
+<ol>
+<li>硬盘驱动</li>
+</ol>
+<p>  常见的硬盘类型有PATA, SATA和AHCI等，在Linux系统中，对不同硬盘所提供的驱动模块一般都存放在内核目录树drivers/ata中，而对于一般通用的硬盘驱动，也许会直接被编译到内核中，而不会以模块的方式出现，可以通过查看/boot/config-xxx.xxx文件来确认：</p>
+<p>  CONFIG_SATA_AHCI=y</p>
+<ol start="2">
+<li>General Block Device Layer</li>
+</ol>
+<p>  这一层的作用，正是解答了上面提出的第一个问题，不同的硬盘驱动，会提供不同的IO接口，内核认为这种杂乱的接口，不利于管理，需要把这些接口抽象一下，形成一个统一的对外接口，这样，不管你是什么硬盘，什么驱动，对外而言，它们所提供的IO接口没什么区别，都一视同仁的被看作块设备来处理。</p>
+<p>  所以，如果在一层做的任何修改，将会直接影响到所有文件系统，不管是ext3,ext4还是其它文件系统，只要在这一层次做了某种修改，对它们都会产生影响。</p>
+<ol start="3">
+<li>文件系统</li>
+</ol>
+<p>  文件系统这一层相信大家都再熟悉不过了，目前大多Linux发行版本默认使用的文件系统一般是ext4，另外，新一代的btrfs也呼之欲出，不管什么样的文件系统，都是由一系列的mkfs.xxx命令来创建，如：</p>
+<p>  mkfs.ext4 /dev/sda</p>
+<p>  mkfs.btrfs /dev/sdb</p>
+<p>  内核所支持的文件系统类型，在内核目录树 fs 目录中。</p>
+<ol start="4">
+<li>虚拟文件系统(VFS)</li>
+</ol>
+<p>  Virtual File System这一层，正是用来解决上面提出的第二个问题，试想，当我们通过mkfs.xxx系列命令创建了很多不同的文件系统，但这些文件系统都有各自的API接口，而用户想要的是，不管你是什么API，他们只关心mount/umount，或open/close等操作。<br>  所以，VFS就把这些不同的文件系统做一个抽象，提供统一的API访问接口，这样，用户空间就不用关心不同文件系统中不一样的API了。VFS所提供的这些统一的API，再经过System Call包装一下，用户空间就可以经过SCI的系统调用来操作不同的文件系统。<br>  VFS所提供的常用API有：<br>  mount()， umount() …<br>  open()，close() …<br>  mkdir() …<br><img src="../../pics/operator2" alt="图片" title="图片"><br>Linux启动时，第一个必须挂载的是根文件系统；若系统不能从指定设备上挂载根文件系统，则系统会出错而退出启动。之后可以自动或手动挂载其他的文件系统。因此，一个系统中可以同时存在不同的文件系统。<br>　　不同的文件系统类型有不同的特点，因而根据存储设备的硬件特性、系统需求等有不同的应用场合。在嵌入式Linux应用中，主要的存储设备为RAM(DRAM, SDRAM)和ROM(常采用FLASH存储器)，常用的基于存储设备的文件系统类型包括：jffs2, yaffs, cramfs, romfs, ramdisk, ramfs/tmpfs等。</p>
+]]></content>
+      <tags>
+        <tag>linux源码</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用场景分析--打开文件</title>
+    <url>/2021/11/09/%E5%A6%82%E4%BD%95%E6%89%93%E5%BC%80%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6/</url>
+    <content><![CDATA[<h1 id="LINUX系统调用源码分析"><a href="#LINUX系统调用源码分析" class="headerlink" title="LINUX系统调用源码分析"></a>LINUX系统调用源码分析</h1><h3 id="关于打开文件"><a href="#关于打开文件" class="headerlink" title="关于打开文件"></a>关于打开文件</h3><p>Linux中打开文件是通过open系统调用实现，其函数中调用了do_sys_open()函数完成打开功能，所以下面主要分析do_sys_open()函数，首先先看下open系统调用的入口函数，再具体看do_sys_open()函数：</p>
+<p>SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, int, mode)</p>
+<p>{</p>
+<pre><code>     long ret;
+
+
+
+     if (force_o_largefile())
+
+               flags |= O_LARGEFILE;
+
+
+
+     ret = do_sys_open(AT_FDCWD, filename, flags, mode);
+
+     /* avoid REGPARM breakage on x86: */
+
+     asmlinkage_protect(3, ret, filename, flags, mode);
+
+     return ret;
+</code></pre>
+<p>}</p>
+<p>long do_sys_open(int dfd, const char __user *filename, int flags, int mode)</p>
+<p>{</p>
+<p>/<em>获取文件名称，由getname()函数完成，其内部首先创建存取文件名称的空间，然后</em>从用户空间把文件名拷贝过来*/</p>
+<pre><code>     char *tmp = getname(filename);
+
+     int fd = PTR_ERR(tmp);
+
+
+
+     if (!IS_ERR(tmp)) &#123;
+</code></pre>
+<p>/<em>获取一个可用的fd，此函数调用alloc_fd()函数从fd_table中获取一个可用fd,并做些简单初始化，此函数内部实现比较简单，此次分析不细看</em>/</p>
+<pre><code>               fd = get_unused_fd_flags(flags);
+
+               if (fd &gt;= 0) &#123;
+</code></pre>
+<p>/<em>fd获取成功则开始打开文件，此函数是主要完成打开功能的函数，在此先放一放，下面详细分析</em>/</p>
+<pre><code>                        struct file *f = do_filp_open(dfd, tmp, flags, mode, 0);
+
+                        if (IS_ERR(f)) &#123;
+
+                                 /*打开失败，释放fd*/
+
+                                 put_unused_fd(fd);
+
+                                 fd = PTR_ERR(f);
+
+                        &#125; else &#123;
+
+                                 /*文件如果已经被打开了，调用fsnotify_open()函数*/
+
+                                 fsnotify_open(f-&gt;f_path.dentry);
+
+                                 /*将文件指针安装在fd数组中*/
+
+                                 fd_install(fd, f);
+
+                        &#125;
+
+               &#125;
+
+               /*释放放置从用户空间拷贝过来的文件名的存储空间*/
+
+               putname(tmp);
+
+     &#125;
+
+     return fd;
+</code></pre>
+<p>}</p>
+<p>接下来即将进入到打开功能的真正实现功能的函数do_filp_open()函数：</p>
+<p>struct file *do_filp_open(int dfd, const char *pathname,</p>
+<pre><code>               int open_flag, int mode, int acc_mode)
+</code></pre>
+<p>{</p>
+<pre><code>     /*
+
+     *…若干变量声明
+
+     */
+
+     /*改变参数flag的值，具体做法是flag+1*/
+
+     int flag = open_to_namei_flags(open_flag);
+
+     int force_reval = 0;
+
+
+
+     /*根据__O_SYNC标志来设置O_DSYNC 标志，用以防止恶意破坏程序*/
+
+     if (open_flag &amp; __O_SYNC)
+
+               open_flag |= O_DSYNC;
+
+     /*设置访问权限*/
+
+     if (!acc_mode)
+
+               acc_mode = MAY_OPEN | ACC_MODE(open_flag);
+
+
+
+     /*根据 O_TRUNC标志设置写权限 */
+
+     if (flag &amp; O_TRUNC)
+
+               acc_mode |= MAY_WRITE;
+
+
+
+     /* 设置O_APPEND 标志*/
+
+     if (flag &amp; O_APPEND)
+
+               acc_mode |= MAY_APPEND;
+
+
+
+     /*如果不是创建文件*/
+
+     if (!(flag &amp; O_CREAT)) &#123;
+
+               /*返回特定的file结构体指针*/
+
+               filp = get_empty_filp();
+
+
+
+               if (filp == NULL)
+
+                        return ERR_PTR(-ENFILE);
+
+               /*填充nameidata 结构*/
+
+               nd.intent.open.file = filp;
+
+               filp-&gt;f_flags = open_flag;
+
+               nd.intent.open.flags = flag;
+
+               nd.intent.open.create_mode = 0;
+</code></pre>
+<p>/<em>当内核要访问一个文件的时候，第一步要做的是找到这个文件，而查找文件的过程在vfs里面是由path_lookup或者path_lookup_open函数来完成的。这两个函数将用户传进来的字符串表示的文件路径转换成一个dentry结构，并建立好相应的inode和file结构，将指向file的描述符返回用户。用户随后通过文件描述符，来访问这些数据结构</em>/<br>                   error = do_path_lookup(dfd, pathname,</p>
+<pre><code>                                           lookup_flags(flag)|LOOKUP_OPEN, &amp;nd);
+
+               if (IS_ERR(nd.intent.open.file)) &#123;
+
+                        if (error == 0) &#123;
+
+                                 error = PTR_ERR(nd.intent.open.file);
+
+                                 /*减少dentry和vsmount得计数*/
+
+                                 path_put(&amp;nd.path);
+
+                        &#125;
+
+               &#125; else if (error)
+
+                        /*如果查找失败则释放一些资源*/
+
+                        release_open_intent(&amp;nd);
+
+               if (error)
+
+                        return ERR_PTR(error);
+
+               goto ok;
+
+     &#125;
+
+
+
+     /*到此则是要创建文件*/
+</code></pre>
+<p>reval:</p>
+<pre><code>     /* path-init为查找作准备工作，path_walk真正上路查找，这两个函数联合起来根据一段路径名找到对应的dentry */
+
+     error = path_init(dfd, pathname, LOOKUP_PARENT, &amp;nd);
+
+     if (error)
+
+               return ERR_PTR(error);
+
+     if (force_reval)
+
+               nd.flags |= LOOKUP_REVAL;
+</code></pre>
+<p>/*这个函数相当重要，就如源代码注释的那样，是整个NFS的名字解析函数，其实也是NFS得以构筑的函数。这里作一重点分析。这里先作一个综述。该函数采用一个for循环，对name路径根据目录的层次，一层一层推进，直到终点或失败。在推进的过程中，一步步建立了目录树的dentry和对应的inode */</p>
+<pre><code>     error = path_walk(pathname, &amp;nd);
+
+     if (error) &#123;
+
+               if (nd.root.mnt)
+
+                        path_put(&amp;nd.root);
+
+               return ERR_PTR(error);
+
+     &#125;
+
+     if (unlikely(!audit_dummy_context()))
+
+               /*保存inode节点信息*/
+
+               audit_inode(pathname, nd.path.dentry);
+
+
+
+     /*父节点信息*/
+
+     error = -EISDIR;
+
+     if (nd.last_type != LAST_NORM || nd.last.name[nd.last.len])
+
+               goto exit_parent;
+
+
+
+     error = -ENFILE;
+
+     /*获取文件指针*/
+
+     filp = get_empty_filp();
+
+     if (filp == NULL)
+
+               goto exit_parent;
+
+     /*填充nameidata 结构*/
+
+     nd.intent.open.file = filp;
+
+     filp-&gt;f_flags = open_flag;
+
+     nd.intent.open.flags = flag;
+
+     nd.intent.open.create_mode = mode;
+
+     dir = nd.path.dentry;
+
+     nd.flags &amp;= ~LOOKUP_PARENT;
+
+     nd.flags |= LOOKUP_CREATE | LOOKUP_OPEN;
+
+     if (flag &amp; O_EXCL)
+
+               nd.flags |= LOOKUP_EXCL;
+
+     mutex_lock(&amp;dir-&gt;d_inode-&gt;i_mutex);
+
+     /*从哈希表中查找nd对应的dentry*/
+
+     path.dentry = lookup_hash(&amp;nd);
+
+     path.mnt = nd.path.mnt;
+</code></pre>
+<p>do_last:</p>
+<pre><code>     error = PTR_ERR(path.dentry);
+
+     if (IS_ERR(path.dentry)) &#123;
+
+               mutex_unlock(&amp;dir-&gt;d_inode-&gt;i_mutex);
+
+               goto exit;
+
+     &#125;
+
+
+
+     if (IS_ERR(nd.intent.open.file)) &#123;
+
+               error = PTR_ERR(nd.intent.open.file);
+
+               goto exit_mutex_unlock;
+
+     &#125;
+
+
+
+     /*如果此dentry结构没有对应的inode节点，说明是无效的，应该创建文件节点 */
+
+     if (!path.dentry-&gt;d_inode) &#123;
+
+               /*write权限是必需的*/
+
+               error = mnt_want_write(nd.path.mnt);
+
+               if (error)
+
+                        goto exit_mutex_unlock;
+
+               /*按照namei格式的flag open*/
+
+               error = __open_namei_create(&amp;nd, &amp;path, flag, mode);
+
+               if (error) &#123;
+
+                        mnt_drop_write(nd.path.mnt);
+
+                        goto exit;
+
+               &#125;
+
+               /*根据nameidata 得到相应的file结构*/
+
+               filp = nameidata_to_filp(&amp;nd);
+
+               /*放弃写权限*/
+
+               mnt_drop_write(nd.path.mnt);
+
+               if (nd.root.mnt)
+
+                        /*计数减一*/
+
+                        path_put(&amp;nd.root);
+
+               if (!IS_ERR(filp)) &#123;
+
+                        error = ima_file_check(filp, acc_mode);
+
+                        if (error) &#123;
+
+                                 fput(filp);
+
+                                 filp = ERR_PTR(error);
+
+                        &#125;
+
+               &#125;
+
+               return filp;
+
+     &#125;
+
+
+
+     /*要打开的文件已经存在*/
+
+     mutex_unlock(&amp;dir-&gt;d_inode-&gt;i_mutex);
+
+     /*保存inode节点*/
+
+     audit_inode(pathname, path.dentry);
+</code></pre>
+<p>/*</p>
+<pre><code>     *省略若干flag标志检查代码
+
+     */
+
+
+
+     /*路径装化为相应的nameidata 结构*/
+
+     path_to_nameidata(&amp;path, &amp;nd);
+
+     error = -EISDIR;
+
+     /*如果是文件夹*/
+
+     if (S_ISDIR(path.dentry-&gt;d_inode-&gt;i_mode))
+
+               goto exit;
+</code></pre>
+<p>ok:</p>
+<pre><code>     /*检测是否截断文件标志*/
+
+     will_truncate = open_will_truncate(flag, nd.path.dentry-&gt;d_inode);
+
+     if (will_truncate) &#123;
+
+     /*要截断的话就要获取写权限*/
+
+               error = mnt_want_write(nd.path.mnt);
+
+               if (error)
+
+                        goto exit;
+
+     &#125;
+
+     //may_open执行权限检测、文件打开和truncate的操作
+
+     error = may_open(&amp;nd.path, acc_mode, flag);
+
+     if (error) &#123;
+
+               if (will_truncate)
+
+                        mnt_drop_write(nd.path.mnt);
+
+               goto exit;
+
+     &#125;
+
+     filp = nameidata_to_filp(&amp;nd);
+
+     if (!IS_ERR(filp)) &#123;
+
+               error = ima_file_check(filp, acc_mode);
+
+               if (error) &#123;
+
+                        fput(filp);
+
+                        filp = ERR_PTR(error);
+
+               &#125;
+
+     &#125;
+
+     if (!IS_ERR(filp)) &#123;
+
+               if (acc_mode &amp; MAY_WRITE)
+
+                        vfs_dq_init(nd.path.dentry-&gt;d_inode);
+
+
+
+               if (will_truncate) &#123;
+
+                        //处理截断
+
+                        error = handle_truncate(&amp;nd.path);
+
+                        if (error) &#123;
+
+                                 fput(filp);
+
+                                 filp = ERR_PTR(error);
+
+                        &#125;
+
+               &#125;
+
+     &#125;
+
+     //安全的放弃写权限
+
+     if (will_truncate)
+
+               mnt_drop_write(nd.path.mnt);
+
+     if (nd.root.mnt)
+
+               path_put(&amp;nd.root);
+
+     return filp;
+</code></pre>
+<p>exit_mutex_unlock:</p>
+<pre><code>     mutex_unlock(&amp;dir-&gt;d_inode-&gt;i_mutex);
+</code></pre>
+<p>exit_dput:</p>
+<pre><code>     path_put_conditional(&amp;path, &amp;nd);
+</code></pre>
+<p>exit:</p>
+<pre><code>     if (!IS_ERR(nd.intent.open.file))
+
+               release_open_intent(&amp;nd);
+</code></pre>
+<p>exit_parent:</p>
+<pre><code>     if (nd.root.mnt)
+
+               path_put(&amp;nd.root);
+
+     path_put(&amp;nd.path);
+
+     return ERR_PTR(error);
+</code></pre>
+<p>//允许遍历连接文件，则手工找到连接文件对应的文件</p>
+<p>do_link:</p>
+<pre><code>     error = -ELOOP;
+
+     if (flag &amp; O_NOFOLLOW)
+
+               //不允许遍历连接文件，返回错误
+
+               goto exit_dput;
+
+     /*
+
+      以下是手工找到链接文件对应的文件dentry结构代码
+
+      */
+
+     // 设置查找LOOKUP_PARENT标志
+
+     nd.flags |= LOOKUP_PARENT;
+
+     //判断操作是否安全
+
+     error = security_inode_follow_link(path.dentry, &amp;nd);
+
+     if (error)
+
+               goto exit_dput;
+
+     // 处理符号链接
+
+     error = __do_follow_link(&amp;path, &amp;nd);
+
+     path_put(&amp;path);
+
+     if (error) &#123;
+
+    
+
+               release_open_intent(&amp;nd);
+
+               if (nd.root.mnt)
+
+                        path_put(&amp;nd.root);
+
+               if (error == -ESTALE &amp;&amp; !force_reval) &#123;
+
+                        force_reval = 1;
+
+                        goto reval;
+
+               &#125;
+
+               return ERR_PTR(error);
+
+     &#125;
+
+     nd.flags &amp;= ~LOOKUP_PARENT;
+
+     // 检查最后一段文件或目录名的属性情况
+
+     if (nd.last_type == LAST_BIND)
+
+               goto ok;
+
+     error = -EISDIR;
+
+     if (nd.last_type != LAST_NORM)
+
+               goto exit;
+
+     if (nd.last.name[nd.last.len]) &#123;
+
+               __putname(nd.last.name);
+
+               goto exit;
+
+     &#125;
+
+     error = -ELOOP;
+
+     // 出现回环标志: 循环超过32次
+
+     if (count++==32) &#123;
+
+               __putname(nd.last.name);
+
+               goto exit;
+
+     &#125;
+
+     dir = nd.path.dentry;
+
+     mutex_lock(&amp;dir-&gt;d_inode-&gt;i_mutex);
+
+     // 更新路径的挂接点和dentry
+
+     path.dentry = lookup_hash(&amp;nd);
+
+     path.mnt = nd.path.mnt;
+
+     __putname(nd.last.name);
+
+     goto do_last;
+</code></pre>
+<p>}</p>
+<p>分析完上述主要函数以后，我们来看一下整个打开流程是如何做到的：</p>
+<p>在内核中要打开一个文件，首先应该找到这个文件，而查找文件的过程在vfs里面是由do_path_lookup或者path_lookup_open函数来完成的。这两个函数将用户传进来的字符串表示的文件路径转换成一个dentry结构，并建立好相应的inode和file结构，将指向file的描述符返回用户。用户随后通过文件描述符，来访问这些数据结构。</p>
+<p>基本函数流程及调用方式如下所示：</p>
+<p>打开过程首先是open系统调用访问SYSCALL_DEFINE3函数，然后调用do_sys_open 函数完成主要功能，再调用函数do_filp_open完成主要的打开功能，下面详细看下do_filp_open中调用的do_path_lookup主要过程：</p>
+<p>staic int  do_path_lookup(int dfd,const char</p>
+<p>*name,unsigned int flags,strucy nameidata *nd)</p>
+<p>{</p>
+<pre><code>       int retval=path_init(dfd,name,flags,nd);
+</code></pre>
+<p>//设置nd-&gt;root=根路径（绝对地址）或者当前工作目录（相对地址） 。</p>
+<p>//这一步做完了后，内核会建立一些数据结构（dentry,inode）来初始化查找的起点</p>
+<pre><code>       if(!retval)
+
+                   retval = path_walk(name,nd);
+</code></pre>
+<p>//path_walk,会遍历路径的每一份量，也就是用“/”分隔开的每一部分，</p>
+<p>//最中找到name指向的文件，walk的意思就是walk path的每一个组分（component）</p>
+<pre><code>    &#125;
+</code></pre>
+<p>我们进一步看看path_walk</p>
+<p>int path_walk(const char *name,struct nameidata *nd)</p>
+<p>{</p>
+<pre><code>        return link_path_walk(name,nd);
+</code></pre>
+<p>//path_walk其实相当于直接调用link_path_walk来完成工作</p>
+<p>}</p>
+<p>link_path_walk的主要工作是有其内部函数__link_path_walk 来完成的</p>
+<pre><code>      result = __link_path_walk(name,nd)
+
+    
+</code></pre>
+<p>至此我们转向最重要的代码__link_walk_path,该函数把传进来的字符串name，也就是用户指定的路径，按路径分隔符分解成一系列小的component。比如用户说，我要找/path/to/dest这个文件，那么我们的文件系统就会按path,to,dest一个一个来找，知道最后一个分量是文件或者查找完成。他找的时候，会先用path_init初始化过的根路径去找第一个分量，也就是path。然后用path的dentry-&gt;d_inode去找to，这样循环到最后一个。注意，内核会缓存找到的路径分量，所以往往只有第一次访问一个路径的时候，才会去访问磁盘，后面的访问会直接从缓存里找，下面会看到，很多与页告诉缓存打交道的代码。但不管怎样，第一遍查找总是会访问磁盘的。</p>
+<p>static int __link_path_walk(const char *name,strucy</p>
+<p>nameidata *nd)</p>
+<p>{</p>
+<p>}</p>
+<p>至此，按照每一个component查找完成之后，就会找到相应的文件，然后相应的打开工作就基本完成了。</p>
+<h3 id="关于文件分类"><a href="#关于文件分类" class="headerlink" title="关于文件分类"></a>关于文件分类</h3><ol>
+<li><p>系统的启动和初始化<br> 在基于Intel的系统上，当 loadlin.exe 或 LILO把内核装入到内存并把控制权传递给内核时，内核开始启动。关于这一部分，看arch/i386/kernel/head.S ，head.S进行特定结构的设置，然后跳转到init/main.c的main()例程。</p>
+</li>
+<li><p>内存管理<br> 内存管理的代码主要在/mm，但特定结构的代码在arch/*/mm。缺页中断处理的代码在mm/memory.c ，而内存映射和页高速缓存器的代码在mm/filemap.c。缓冲器高速缓存是在mm/buffer.c 中实现，而交换高速缓存是在mm/swap_state.c 和mm/swapfile.c中实现。</p>
+</li>
+<li><p>内核<br>  内核中，特定结构的代码在arch/*/kernel，调度程序在kernel/sched.c，fork的代码在kernel/fork.c，task_struct 数据结构在 include/linux/sched.h中。</p>
+</li>
+<li><p>PCI</p>
+<pre><code>PCI 伪驱动程序在 drivers/pci/pci.c ，其定义在include/linux/pci.h。每一种结构都有一些特定的 PCI BIOS 代码， Intel的在arch/alpha/kernel/bios32.c。
+</code></pre>
+</li>
+<li><p>进程间通信<br>所有System V IPC 对象权限都包含在 ipc_perm 数据结构中，这可以在  include/linux/ipc.h中找到。 System V 消息是在 ipc/msg.c中实现, 共享内存在 ipc/shm.c中，信号量在  ipc/sem.c中，管道在 ipc/pipe.c中实现。</p>
+</li>
+<li><p>中断处理<br> 内核的中断处理代码是几乎所有的微处理器所特有的。中断处理代码在  arch/i386/kernel/irq.c中，其定义子在 include/asm-i386/irq.h中。</p>
+</li>
+<li><p>设备驱动程序</p>
+<pre><code>Linux内核源代码的很多行是设备驱动程序。Linux设备驱动程序的所有源代码都保存在/driver，根据类型可进一步划分为：
+</code></pre>
+</li>
+</ol>
+<p>/block<br>     块设备驱动程序如ide(在ide.c)。如果你想看包含文件系统的所有设备是如何被初始化的，你应当看drivers/block/genhd.c中的device_setup()，device_setup()不仅初始化了硬盘，当一个网络安装nfs文件系统时，它也初始化网络。块设备包含了基于IDE和SCSI的设备。</p>
+<p>/char<br>       这是看字符设备(如tty，串口及鼠标等)驱动程序的地方。<br>/cdrom<br>        Linux的所有CDROM代码都在这儿，如在这儿可以找到Soundblaster CDROM的驱动程序。注意ide CD的驱动程序是 ide-cd.c，放在drivers/block，SCSI CD的驱动程序是scsi.c，放在drivers/scsi。<br>/pci<br>    这是PCI伪驱动程序的源代码，在这里可以看到PCI子系统是如何被映射和初始化的。<br>/scsi<br>     在这里可以找到所有的SCSI代码及Linux所支持的scsi设备的所有设备驱动程序。<br>/net<br>    在这里可以找到网络设备驱动程序，如DECChip 21040 PCI 以太网驱动程序在tulip.c中。<br>/sound<br>       这是所有声卡驱动程序的所在地。<br>       8.文件系统<br>   EXT2 文件系统的源代码全部在  fs/ext2/ 目录下，而其数据结构的定义在  include/linux/ext2_fs.h, ext2_fs_i.h 及 ext2_fs_sb.h中。 虚拟文件系统的数据结构在 include/linux/fs.h中描述，而代码是在fs/*中。 缓冲区高速缓存与更新内核的守护进程的实现是在 fs/buffer.c中 。<br>       9.网络<br>   网络代码保存在/net中，大部分的include文件在include/net下，BSD套节口代码在net/socket.c中，IP 第4版本的套节口代码在net/ipv4/af_inet.c。一般的协议支持代码(包括sk_buff 处理例程)在net/core下，TCP/IP联网代码在net/ipv4下，网络设备驱动程序在/drivers/net下。<br>    10.模块<br>   内核模块的代码部分在内核中，部分在模块包中，前者全部在kernel/modules.c中，而数据结构和内核守护进程kerneld的信息分别在include/linux/module.h和include/linux/kerneld.h 中。如果你想看ELF目标文件的结构，它位于include/linux/elf.h中。</p>
+<h3 id="Linux系统调用是基于ARMv8的异常模式"><a href="#Linux系统调用是基于ARMv8的异常模式" class="headerlink" title="Linux系统调用是基于ARMv8的异常模式"></a>Linux系统调用是基于ARMv8的异常模式</h3><p>EL0-User，一般的应用程序运行在此级别。</p>
+<p>EL1-Suervisor，操作系统运行在此级别，Linux内核，设备驱动等都运行在此级别。</p>
+<p>EL2-Hypervisor，虚拟机系统运行在此级别，在此级别Guest客户机的虚拟内存需要做多一层Stage2的地址转换。</p>
+<p>EL3-Secure monitor，安全级别。</p>
+<p><img src="#" alt="调用级别" title="调用级别"></p>
 ]]></content>
       <tags>
         <tag>linux源码</tag>
