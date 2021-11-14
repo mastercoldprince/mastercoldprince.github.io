@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>关于付灵美师姐的贝叶斯相关问题</title>
+    <url>/2021/11/09/hello-world-1/</url>
+    <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>已通过修改贝叶斯网络源码解决。待更新最新结果</p>
+]]></content>
+      <tags>
+        <tag>贝叶斯</tag>
+        <tag>叉乘</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>操作指南</title>
     <url>/2021/10/21/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -19,20 +29,24 @@
 ]]></content>
   </entry>
   <entry>
-    <title>关于付灵美师姐的贝叶斯相关问题</title>
-    <url>/2021/11/09/hello-world-1/</url>
-    <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>已通过修改贝叶斯网络源码解决。待更新最新结果</p>
+    <title>文件描述符、文件指针、索引节点</title>
+    <url>/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/</url>
+    <content><![CDATA[<h1 id="文件描述符、文件指针、索引节点"><a href="#文件描述符、文件指针、索引节点" class="headerlink" title="文件描述符、文件指针、索引节点"></a>文件描述符、文件指针、索引节点</h1><h2 id="1、文件描述符-Fd"><a href="#1、文件描述符-Fd" class="headerlink" title="1、文件描述符 Fd"></a>1、文件描述符 Fd</h2><p>当进程打开文件或创建新文件时，内核会返回一个文件描述符（非负整数），用来指向被打开的文件，所有执行I/O操作的系统调用（read、write）都会通过文件描述符。</p>
+<p>文件描述符可以理解为进程文件描述表这个表的索引，或者把文件描述表看做一个数组的话，文件描述符可以看做是数组的下标。当需要进行I/O操作的时候，会传入fd作为参数，先从进程文件描述符表查找该fd对应的那个条目，取出对应的那个已经打开的文件的句柄，根据文件句柄指向，去系统fd表中查找到该文件指向的inode，从而定位到该文件的真正位置，从而进行I/O操作。<br><img src="../../pics/Fd.jpg" alt="三张表的关系图" title="三张表的关系图"><br>**特点:<br>**<br>每个文件描述符会与一个打开的文件相对应<br>不同的文件描述符也可能指向同一个文件<br>相同的文件可以被不同的进程打开，也可以在同一个进程被多次打开</p>
+<h2 id="2、系统级的文件描述符表"><a href="#2、系统级的文件描述符表" class="headerlink" title="2、系统级的文件描述符表"></a>2、系统级的文件描述符表</h2><p>内核对系统所有打开的文件维护了一个打开文件表，表中每一项称为打开文件句柄，一个打开文件句柄描述了一个打开文件的全部信息</p>
+<ul>
+<li>当前文件偏移量（调用read()和write()时更新，或使用lseek()直接修改）</li>
+<li>打开文件时所使用的状态标识（即，open()的flags参数）</li>
+<li>文件访问模式（如调用open()时所设置的只读模式、只写模式或读写模式）</li>
+<li>与信号驱动相关的设置</li>
+<li>对该文件i-node对象的引用</li>
+<li>文件类型（例如：常规文件、套接字或FIFO）和访问权限</li>
+<li>一个指针，指向该文件所持有的锁列表</li>
+<li>文件的各种属性，包括文件大小以及与不同类型操作相关的时间戳<h2 id="3、文件系统的inode表"><a href="#3、文件系统的inode表" class="headerlink" title="3、文件系统的inode表"></a>3、文件系统的inode表</h2>每个文件系统会为存储于其上的所有文件维护一个inode表<br>文件描述符表、打开文件表、inode表之间的关系：<br><img src="../../pics/Fdbetween.jpg" alt="三者之间的关系" title="三者之间的关系"><br>进程A文件描述符1和20指向同一个打开文件句柄，是因为多次调用open()等函数打开同一个文件导致。<br>进程A的文件描述符2和进程B的文件描述符2指向同一个打开文件句柄可能是因为调用fork()后出现的，子进程会继承父进程的打开文件描述符表，也就是子进程继承父进程打开文件。；或者某进程通过unix域套接字将一个打开的文件描述符传递给另一个进程；或者不通进程独自调用open函数打开同一个文件是正好分配到与其他进程打开该文件描述符一样。<br>进程A的描述符0和进程B的描述符3分别指向不同的打开文件句柄，但这些句柄均指向i-node表的相同条目，即同一个文件，发生这种情况是因为每个进程各自对同一个文件发起了open()调用。同一个进程两次打开同一个文件，也会发生类似情况。<h2 id="补充：磁盘结构"><a href="#补充：磁盘结构" class="headerlink" title="补充：磁盘结构"></a>补充：磁盘结构</h2>文件储存在硬盘上，硬盘的最小存储单位叫做”扇区”（Sector）。每个扇区储存512字节（相当于0.5KB）。<br>操作系统读取硬盘的时候，不会一个个扇区地读取，这样效率太低，而是一次性连续读取多个扇区，即一次性读取一个”块”（block）。这种由多个扇区组成的”块”，是文件存取的最小单位。”块”的大小，最常见的是4KB，即连续八个 sector组成一个 block。<br><img src="../../pics/Sector.png" alt="扇区" title="扇区"><br><img src="../../pics/Sector2.png" alt="扇区2" title="扇区2"><br><img src="../../pics/Sector3.png" alt="扇区3" title="扇区3"><br>由上，可用（柱面号，盘面号，扇区号）来定位任意一个“磁盘块”，我们经常提到文件数据存放在外存中的几号块（逻辑地址），这个块号就可以转换成（柱面号，盘面号，扇区号）的地址形式。<br>可根据该地址读取一个“块”，操作如下：<br>① 根据“柱面号”移动磁臂，让磁头指向指定柱面（也称磁道）<br>② 激活指定盘面对应的磁头；<br>③ 磁盘旋转的过程中，指定的扇区会从磁头下面划过，这样就完成了对指定扇区的读/写</li>
+</ul>
 ]]></content>
       <tags>
-        <tag>贝叶斯</tag>
-        <tag>叉乘</tag>
+        <tag>linux源码</tag>
       </tags>
-  </entry>
-  <entry>
-    <title></title>
-    <url>/2021/11/14/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/</url>
-    <content><![CDATA[<h1 id="文件描述符、文件指针、索引节点"><a href="#文件描述符、文件指针、索引节点" class="headerlink" title="文件描述符、文件指针、索引节点"></a>文件描述符、文件指针、索引节点</h1><h2 id="1、文件描述符-Fd"><a href="#1、文件描述符-Fd" class="headerlink" title="1、文件描述符 Fd"></a>1、文件描述符 Fd</h2><p>当进程打开文件或创建新文件时，内核会返回一个文件描述符（非负整数），用来指向被打开的文件，所有执行I/O操作的系统调用（read、write）都会通过文件描述符。</p>
-<p>文件描述符可以理解为进程文件描述表这个表的索引，或者把文件描述表看做一个数组的话，文件描述符可以看做是数组的下标。当需要进行I/O操作的时候，会传入fd作为参数，先从进程文件描述符表查找该fd对应的那个条目，取出对应的那个已经打开的文件的句柄，根据文件句柄指向，去系统fd表中查找到该文件指向的inode，从而定位到该文件的真正位置，从而进行I/O操作。<br><img src="../../pics/%E8%B0%83%E7%94%A8.jpg" alt="三张表的关系图" title="三张表的关系图"></p>
-]]></content>
   </entry>
 </search>
