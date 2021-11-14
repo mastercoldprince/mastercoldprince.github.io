@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title></title>
-    <url>/2021/11/14/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/</url>
-    <content><![CDATA[]]></content>
-  </entry>
-  <entry>
     <title>关于付灵美师姐的贝叶斯相关问题</title>
     <url>/2021/11/09/hello-world-1/</url>
     <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>已通过修改贝叶斯网络源码解决。待更新最新结果</p>
@@ -45,6 +40,23 @@
 ]]></content>
       <tags>
         <tag>linux使用</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用场景分析--打开文件2</title>
+    <url>/2021/11/09/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/</url>
+    <content><![CDATA[<h1 id="系统调用open"><a href="#系统调用open" class="headerlink" title="系统调用open"></a>系统调用open</h1><h2 id="1-【fs-open-c】sys-open"><a href="#1-【fs-open-c】sys-open" class="headerlink" title="1.【fs/open.c】sys_open()"></a>1.【fs/open.c】sys_open()</h2><p>SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (force_o_largefile())</span><br><span class="line">        flags |= O_LARGEFILE;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> do_sys_open(AT_FDCWD, filename, flags, mode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>SYSCALL_DEFINE3 是用来定义系统调用的宏，展开后类似于这样：<br>sys_open(const char __user *filename, int flags, umode_t mode)，其中filename 实际上就是路径名；flags 表示打开模式，诸如只读、新建等等；mode 代表新建文件的权限，所以仅仅在创建新文件时（flags 为 O_CREAT 或 O_TMPFILE）才使用。参数通过return给传递给 open 的主函数 do_sys_open。</p>
+<h2 id="2-【fs-open-c】sys-open-gt-do-sys-open"><a href="#2-【fs-open-c】sys-open-gt-do-sys-open" class="headerlink" title="2.【fs/open.c】sys_open()-&gt;do_sys_open()"></a>2.【fs/open.c】sys_open()-&gt;do_sys_open()</h2><p>在顺利取得空闲的文件表述符的情况下调用 do_filp_open 完成对路径的搜寻和文件的打开，并将文件描述符返回用户空间。</p>
+<h2 id="3-【fs-namei-c】sys-open-gt-do-sys-open-gt-getname-gt-getname-flags"><a href="#3-【fs-namei-c】sys-open-gt-do-sys-open-gt-getname-gt-getname-flags" class="headerlink" title="3.【fs/namei.c】sys_open()-&gt;do_sys_open()-&gt;getname()-&gt;getname_flags()"></a>3.【fs/namei.c】sys_open()-&gt;do_sys_open()-&gt;getname()-&gt;getname_flags()</h2><p>在内核缓冲区专用队列里申请一块内存用来放置路径名，若这个字符串已经填满了内存页剩余空间，这时就需要将结构体 struct filename 从这个内存页中分离并单独分配空间，然后用整个内存页保存该字符串。回到 do_sys_open后，为新打开的文件分配空闲文件描述符</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open</h2><p>path_openat 主要作用是首先为 struct file 申请内存空间，设置遍历路径的初始状态，然后遍历路径并找到最终目标的父节点，最后根据目标的类型和标志位完成 open 操作，最终返回一个新的 file 结构。涉及到“路径行走（path walk）”的两种策略：rcu-walk和 ref-walk。在 rcu-walk 期间将会禁止抢占，也决不能出现进程阻塞，所以其效率很高；ref-walk 会在 rcu-walk 失败、进程需要随眠或者需要取得某结构的引用计数（reference count）的情况下切换进来，很明显它的效率大大低于 rcu-walk。</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat</h2><p> total_link_count 用来记录符号链接的深度。最大允许 40 层符号链接。</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-gt-link-path-walk"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-gt-link-path-walk" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat-&gt;link_path_walk"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat-&gt;link_path_walk</h2><p>找到子目录项path</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-1"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-1" class="headerlink" title="【fs/namei.c】sys_open &gt; do_sys_open &gt; do_filp_open &gt; path_openat"></a>【fs/namei.c】sys_open &gt; do_sys_open &gt; do_filp_open &gt; path_openat</h2><p>do_last函数会检查最终文件是否存在，以及填充 file 结构<br>最后 may_open 检查相应的权限，然后 finish_open 完成打开操作</p>
+]]></content>
+      <tags>
+        <tag>linux源码</tag>
       </tags>
   </entry>
   <entry>
