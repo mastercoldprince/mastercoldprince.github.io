@@ -26,19 +26,13 @@
 <h3 id="ext2-block-to-path"><a href="#ext2-block-to-path" class="headerlink" title="ext2_block_to_path"></a>ext2_block_to_path</h3><p><img src="../../../../pics/EXT212.png"><br>功能主要是根据逻辑地址计算出在深度及每一层的位置。前文我们已经知道文件数据的放置方式，结合图3以比较清楚的理解本函数的代码。这里根据数据的逻辑地址分为3种情况，分别如下：<br>** 不需要间接块 **： 也就是数据目的位置（以文件块大小为单位）在12以内，则说明是直接引用，不需要间接块，此时在数组的前12个元素中的一个。<br>** 一级间接块 **： 数据范围在一级间接块可表示的范围内，此时表示路径的数组的第一个元素是inode数组中的第12个元素，而第二个元素则是在间接块中的具体位置。比如i_block是18，此时通过直接寻址无法满足要求，因此需要一级间接块。这样，offsets中第一个元素的值是12，表示是一级间接块；offsets的第二个元素是6，因为直接索引可以表示12个数据块，因此在间接块中的分别可以存储从第13到256+12的数据范围，对于位置为18的数据在间接块的位置就是6。<br>** 二三级间接块 **： 以此类推，根据逻辑地址的大小可能会需要二级甚至三级间接块，依照这种算法可以计算出每一级间接块的位置。</p>
 <h3 id="ext2-get-branch"><a href="#ext2-get-branch" class="headerlink" title="ext2_get_branch"></a>ext2_get_branch</h3><p>从物理块中读取数据到chain的buffer中<br> inode 操作的节点<br>depth 间接块的深度<br>offset 间接物理块的指针数组<br>chain 存储读取物理块的数据</p>
 <h3 id="ext2-alloc-branch"><a href="#ext2-alloc-branch" class="headerlink" title="ext2_alloc_branch"></a>ext2_alloc_branch</h3><p>函数ext2_alloc_branch分配并建立一个块链表，其中参数inode表示需分配块的节点，参数num表示间接块的深度，参数offsets是一个数组，即offsets[num]，参数branch是存储链表的地方。<br>主要调用了2个函数，其中ext2_alloc_blocks用户分配磁盘块，本质是将管理磁盘空间的位图的对应位进行置位操作；另外一个函数sb_getblk用于从磁盘读取该块的数据，并进行初始化。<br><img src="../../../../pics/EXT213.png"><br><img src="../../../../pics/EXT214.png"></p>
+<h3 id="关于寻址"><a href="#关于寻址" class="headerlink" title="关于寻址"></a>关于寻址</h3><p>从上图可以看出，索引项 Blocks[13]指向两级的间接寻址块，总共最多可表示 (b/4)^2 +b/4+12个数据块，对于 1K的块大小最大可表示 64.26MB的文件。索引项 Blocks[14]指向三级的间接寻址块，总共最多可表示 (b/4)^3 +(b/4)^2 +b/4+12个数据块，对于 1K的块大小最大可表示 16.06GB的文件。</p>
+<p>可见，这种寻址方式对于访问不超过 12个数据块的小文件是非常快的，访问文件中的任意数据只需要两次读盘操作，一次读 inode（也就是读索引项）一次读数据块。而访问大文件中的数据则需要最多五次读盘操作： inode、一级间接寻址块、二级间接寻址块、三级间接寻址块、数据块。实际上，磁盘中的 inode（索引节点高速缓存）和数据块（块高速缓存）往往已经被内核缓存了，读大文件的效率也不会太低。 </p>
+<h3 id="日志机制"><a href="#日志机制" class="headerlink" title="日志机制"></a>日志机制</h3><p>ext2和ext3的格式完全相同，只是在ext3硬盘最后面有一部分空间用来存放Journal的记录；<br>在ext2中，写文件到硬盘中时，先将文件写入缓存中，当缓存写满时才会写入硬盘中；<br>在ext3中，写文件到硬盘中时，先将文件写入缓存中，待缓存写满时系统先通知Journal，再将文件写入硬盘，完成后再通知Journal，资料已完成写入工作；<br>在ext3中，也就是有Journal机制里，系统开机时检查Journal的内容，来查看是否有错误产生，这样就加快了开机速度；</p>
+<p>在向文件系统中的文件写入数据的时候，会先产生一个journal log日志，这个journal log日志是生成在内存中的。系统中有一个后台进程kjournald2，会定时查看这些journal log日志对应的磁盘操作是否已经将数据块写入磁盘的文件系统中了，如果写入了的话，内存中的这个journal log日志就可以抛弃了，否则，线程会将该日志转移到磁盘上的checkpointlist里。<br>对于磁盘上的checkpointlist来说其中的journal log日志也不能一直存在，否则是非常占用空间的，因此，有一套checkpoint机制，用于清楚checkpointlist中的journal log日志，具体来说是当有新的journal log需要写入checkpointlist之前，检查checkpointlist中是否有足够的空间，如果没有的话，就调用该checkpoint机制，checkpoint机制检查checkpointlist中的journal log是否已经将数据写入磁盘的文件系统，写入的话则直接删除该log，没有的话则写入和删除。</p>
 ]]></content>
       <tags>
         <tag>linux源码</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>关于付灵美师姐的贝叶斯相关问题</title>
-    <url>/2021/11/09/hello-world-1/</url>
-    <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>已通过修改贝叶斯网络源码解决。待更新最新结果</p>
-]]></content>
-      <tags>
-        <tag>贝叶斯</tag>
-        <tag>叉乘</tag>
       </tags>
   </entry>
   <entry>
@@ -60,6 +54,16 @@
 ]]></content>
   </entry>
   <entry>
+    <title>关于付灵美师姐的贝叶斯相关问题</title>
+    <url>/2021/11/09/hello-world-1/</url>
+    <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>已通过修改贝叶斯网络源码解决。待更新最新结果</p>
+]]></content>
+      <tags>
+        <tag>贝叶斯</tag>
+        <tag>叉乘</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>linux系统构建及常用指令</title>
     <url>/2021/11/09/linux_build/</url>
     <content><![CDATA[<h2 id="Linux-2-6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成："><a href="#Linux-2-6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成：" class="headerlink" title="Linux 2.6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成："></a>Linux 2.6内核从配置，到编译，再到安装的命令非常简单，只要按顺序执行下面几个命令就可完成：</h2><h3 id="1-内核配置：make-menuconfig"><a href="#1-内核配置：make-menuconfig" class="headerlink" title="1.内核配置：make menuconfig"></a>1.内核配置：make menuconfig</h3><h4 id="内核配置"><a href="#内核配置" class="headerlink" title="内核配置"></a>内核配置</h4><p>Linux内核在下载解压后需要先配置然后才能编译。源码树的每个目录下都有一个文件Kconfig,这个分布到各目录的Kconfig构成了一个分布式的内核配置数据库，每个Kconfig分别描述了所属目录源文档相关的内核配置菜单。在执行内核配置命令时，从Kconfig中读出菜单的信息供用户进行选择，配置的命令如下：<br>1）make config：基于文本的最为传统的一行一行的配置命令配置，不推荐使用。</p>
@@ -72,6 +76,21 @@
       <tags>
         <tag>linux使用</tag>
       </tags>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/2021/11/17/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6/</url>
+    <content><![CDATA[<h1 id="关于复杂度"><a href="#关于复杂度" class="headerlink" title="关于复杂度"></a>关于复杂度</h1><h2 id="时间复杂度大O记法"><a href="#时间复杂度大O记法" class="headerlink" title="时间复杂度大O记法"></a>时间复杂度大O记法</h2><p>假设每个代码语句每执行一次的耗时是一样的，记为unitTime，所有代码的执行时间，记作T(n)。<br>我们用f(n)来抽象表示一个算法的执行总次数。因此可以推导出所有代码的执行总时间T(n)和每行代码的执行次数n之间的关系是：<br><strong>T(n)=O(f(n))</strong><br>公式中的O表示代码的执行总时间T(n)和其执行总次数f(n)成正比。这种表示法，称之为大O记法。大O记法T(n)=O(f(n))，<strong>表示随问题规模n的增大，算法执行时间的增长率和f(n)的增长率相同，表示的是算法的渐近时间复杂度，简称时间复杂度。</strong></p>
+<h4 id="例"><a href="#例" class="headerlink" title="例"></a>例</h4><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateSum</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>; <span class="comment">// 执行一次</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">int</span> base = i; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">            sum += base + j; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第二行代码的时间复杂度是T2(n)=1；第三行、第四行代码的时间复杂度分别是T3(n)=O(n)，T4(n)=O(n)；第五行和第六行代码它们本身会执行n次，但由于是在循环内，所以根据乘法法则，其时间复杂度分别是T5(n)=O(n²)，T6(n)=O(n²)。</p>
+<p>最后根据加法法则，整段代码的时间复杂度就是:T(n)=T2(n)+T3(n)+T4(n)+T5(n)+T6(n)=O(1)+O(n)+O(n)+O(n²)+O(n²)=O(2n²+2n+1)</p>
+<ul>
+<li>加法常数项可以忽略</li>
+<li>除去最高阶项，其它次项可以忽略</li>
+<li>与最高次项相乘的常数可以忽略</li>
+<li>所讲的时间复杂度，一般指的是最坏时间复杂度</li>
+</ul>
+<h2 id="关于递归的时间复杂度"><a href="#关于递归的时间复杂度" class="headerlink" title="关于递归的时间复杂度"></a>关于递归的时间复杂度</h2>]]></content>
   </entry>
   <entry>
     <title>使用场景分析--打开文件2</title>
@@ -89,21 +108,6 @@
       <tags>
         <tag>linux源码</tag>
       </tags>
-  </entry>
-  <entry>
-    <title></title>
-    <url>/2021/11/17/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6/</url>
-    <content><![CDATA[<h1 id="关于复杂度"><a href="#关于复杂度" class="headerlink" title="关于复杂度"></a>关于复杂度</h1><h2 id="时间复杂度大O记法"><a href="#时间复杂度大O记法" class="headerlink" title="时间复杂度大O记法"></a>时间复杂度大O记法</h2><p>假设每个代码语句每执行一次的耗时是一样的，记为unitTime，所有代码的执行时间，记作T(n)。<br>我们用f(n)来抽象表示一个算法的执行总次数。因此可以推导出所有代码的执行总时间T(n)和每行代码的执行次数n之间的关系是：<br><strong>T(n)=O(f(n))</strong><br>公式中的O表示代码的执行总时间T(n)和其执行总次数f(n)成正比。这种表示法，称之为大O记法。大O记法T(n)=O(f(n))，<strong>表示随问题规模n的增大，算法执行时间的增长率和f(n)的增长率相同，表示的是算法的渐近时间复杂度，简称时间复杂度。</strong></p>
-<h4 id="例"><a href="#例" class="headerlink" title="例"></a>例</h4><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateSum</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>; <span class="comment">// 执行一次</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">int</span> base = i; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">            sum += base + j; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>第二行代码的时间复杂度是T2(n)=1；第三行、第四行代码的时间复杂度分别是T3(n)=O(n)，T4(n)=O(n)；第五行和第六行代码它们本身会执行n次，但由于是在循环内，所以根据乘法法则，其时间复杂度分别是T5(n)=O(n²)，T6(n)=O(n²)。</p>
-<p>最后根据加法法则，整段代码的时间复杂度就是:T(n)=T2(n)+T3(n)+T4(n)+T5(n)+T6(n)=O(1)+O(n)+O(n)+O(n²)+O(n²)=O(2n²+2n+1)</p>
-<ul>
-<li>加法常数项可以忽略</li>
-<li>除去最高阶项，其它次项可以忽略</li>
-<li>与最高次项相乘的常数可以忽略</li>
-<li>所讲的时间复杂度，一般指的是最坏时间复杂度</li>
-</ul>
-<h2 id="关于递归的时间复杂度"><a href="#关于递归的时间复杂度" class="headerlink" title="关于递归的时间复杂度"></a>关于递归的时间复杂度</h2>]]></content>
   </entry>
   <entry>
     <title>文件描述符、文件指针、索引节点</title>

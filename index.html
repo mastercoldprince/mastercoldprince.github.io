@@ -285,7 +285,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-11-21 11:37:26" itemprop="dateModified" datetime="2021-11-21T11:37:26+08:00">2021-11-21</time>
+                <time title="Modified: 2021-11-21 13:03:22" itemprop="dateModified" datetime="2021-11-21T13:03:22+08:00">2021-11-21</time>
               </span>
 
           
@@ -322,6 +322,10 @@
 <h3 id="ext2-block-to-path"><a href="#ext2-block-to-path" class="headerlink" title="ext2_block_to_path"></a>ext2_block_to_path</h3><p><img src="../../../../pics/EXT212.png"><br>功能主要是根据逻辑地址计算出在深度及每一层的位置。前文我们已经知道文件数据的放置方式，结合图3以比较清楚的理解本函数的代码。这里根据数据的逻辑地址分为3种情况，分别如下：<br>** 不需要间接块 **： 也就是数据目的位置（以文件块大小为单位）在12以内，则说明是直接引用，不需要间接块，此时在数组的前12个元素中的一个。<br>** 一级间接块 **： 数据范围在一级间接块可表示的范围内，此时表示路径的数组的第一个元素是inode数组中的第12个元素，而第二个元素则是在间接块中的具体位置。比如i_block是18，此时通过直接寻址无法满足要求，因此需要一级间接块。这样，offsets中第一个元素的值是12，表示是一级间接块；offsets的第二个元素是6，因为直接索引可以表示12个数据块，因此在间接块中的分别可以存储从第13到256+12的数据范围，对于位置为18的数据在间接块的位置就是6。<br>** 二三级间接块 **： 以此类推，根据逻辑地址的大小可能会需要二级甚至三级间接块，依照这种算法可以计算出每一级间接块的位置。</p>
 <h3 id="ext2-get-branch"><a href="#ext2-get-branch" class="headerlink" title="ext2_get_branch"></a>ext2_get_branch</h3><p>从物理块中读取数据到chain的buffer中<br> inode 操作的节点<br>depth 间接块的深度<br>offset 间接物理块的指针数组<br>chain 存储读取物理块的数据</p>
 <h3 id="ext2-alloc-branch"><a href="#ext2-alloc-branch" class="headerlink" title="ext2_alloc_branch"></a>ext2_alloc_branch</h3><p>函数ext2_alloc_branch分配并建立一个块链表，其中参数inode表示需分配块的节点，参数num表示间接块的深度，参数offsets是一个数组，即offsets[num]，参数branch是存储链表的地方。<br>主要调用了2个函数，其中ext2_alloc_blocks用户分配磁盘块，本质是将管理磁盘空间的位图的对应位进行置位操作；另外一个函数sb_getblk用于从磁盘读取该块的数据，并进行初始化。<br><img src="../../../../pics/EXT213.png"><br><img src="../../../../pics/EXT214.png"></p>
+<h3 id="关于寻址"><a href="#关于寻址" class="headerlink" title="关于寻址"></a>关于寻址</h3><p>从上图可以看出，索引项 Blocks[13]指向两级的间接寻址块，总共最多可表示 (b/4)^2 +b/4+12个数据块，对于 1K的块大小最大可表示 64.26MB的文件。索引项 Blocks[14]指向三级的间接寻址块，总共最多可表示 (b/4)^3 +(b/4)^2 +b/4+12个数据块，对于 1K的块大小最大可表示 16.06GB的文件。</p>
+<p>可见，这种寻址方式对于访问不超过 12个数据块的小文件是非常快的，访问文件中的任意数据只需要两次读盘操作，一次读 inode（也就是读索引项）一次读数据块。而访问大文件中的数据则需要最多五次读盘操作： inode、一级间接寻址块、二级间接寻址块、三级间接寻址块、数据块。实际上，磁盘中的 inode（索引节点高速缓存）和数据块（块高速缓存）往往已经被内核缓存了，读大文件的效率也不会太低。 </p>
+<h3 id="日志机制"><a href="#日志机制" class="headerlink" title="日志机制"></a>日志机制</h3><p>ext2和ext3的格式完全相同，只是在ext3硬盘最后面有一部分空间用来存放Journal的记录；<br>在ext2中，写文件到硬盘中时，先将文件写入缓存中，当缓存写满时才会写入硬盘中；<br>在ext3中，写文件到硬盘中时，先将文件写入缓存中，待缓存写满时系统先通知Journal，再将文件写入硬盘，完成后再通知Journal，资料已完成写入工作；<br>在ext3中，也就是有Journal机制里，系统开机时检查Journal的内容，来查看是否有错误产生，这样就加快了开机速度；</p>
+<p>在向文件系统中的文件写入数据的时候，会先产生一个journal log日志，这个journal log日志是生成在内存中的。系统中有一个后台进程kjournald2，会定时查看这些journal log日志对应的磁盘操作是否已经将数据块写入磁盘的文件系统中了，如果写入了的话，内存中的这个journal log日志就可以抛弃了，否则，线程会将该日志转移到磁盘上的checkpointlist里。<br>对于磁盘上的checkpointlist来说其中的journal log日志也不能一直存在，否则是非常占用空间的，因此，有一套checkpoint机制，用于清楚checkpointlist中的journal log日志，具体来说是当有新的journal log需要写入checkpointlist之前，检查checkpointlist中是否有足够的空间，如果没有的话，就调用该checkpoint机制，checkpoint机制检查checkpointlist中的journal log是否已经将数据写入磁盘的文件系统，写入的话则直接删除该log，没有的话则写入和删除。</p>
 
       
     </div>
