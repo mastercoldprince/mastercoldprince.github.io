@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>EXT2文件系统</title>
+    <url>/2021/11/16/ext2/</url>
+    <content><![CDATA[<h1 id="EXT2文件系统"><a href="#EXT2文件系统" class="headerlink" title="EXT2文件系统"></a>EXT2文件系统</h1><p>对文件系统而言，文件仅是一系列可读写的数据块。<br>文件系统不需要了解数据块应该放到物理介质上位置。这些是设备驱动的任务。只要文件系统需要从包含它的块设备中读取信息或数据，它就将请求底层的设备驱动读取一个基本块大小整数倍的数据块。EXT2文件系统将它所使用的逻辑分区划分成数据块组。每个数据块组都将那些对文件系统完整性最重要的信息复制出来，同时将实际文件盒目录看做信息与数据块。<br>文件系统管理的是一个逻辑空间，这个逻辑空间就像一个大的数组，数组的每个元素就是文件系统操作的基本单位——逻辑块。逻辑块是从0开始编号的，而且，逻辑块是连续的，逻辑块相对的是物理块。通常，EXT2的物理块占一个或几个连续的扇区。<br>一般而言，只有块组0的超级块才读入内存，其他块组的超级块仅仅作为备份。在系统运行期间，要将超级块复制到内存系统缓冲区。</p>
+<h3 id="块位图和节点位图"><a href="#块位图和节点位图" class="headerlink" title="块位图和节点位图"></a>块位图和节点位图</h3><p>在EXT2文件系统中，采用位图描述数据块和索引节点的使用情况，每个块组中占用两个块，即一个用来描述该数据块的使用情况，另一个描述该组索引节点的使用情况。这两个块分别称为数据位图块和索引节点位图块。数据位图块中的每一位表示该块组中的每一个块的使用情况，如果为0，则表示相应数据块空闲，如果是1，则表示已分配。</p>
+<h3 id="索引节点表"><a href="#索引节点表" class="headerlink" title="索引节点表"></a>索引节点表</h3><p>每个块组中的索引节点都存储在各自的索引节点表中，并且按索引节点号依次存储。索引节点表通常占好几个数据块，索引节点表所占的块使用时也想普通的数据块一样被调入块高速缓存。<br><img src="../../../../pics/EXT21.png" alt="图一" title="图一"></p>
+<h3 id="数据结构：ext2-super-block"><a href="#数据结构：ext2-super-block" class="headerlink" title="数据结构：ext2_super_block"></a>数据结构：ext2_super_block</h3><p><img src="../../../../pics/EXT22.png"><br><img src="../../../../pics/EXT23.png"></p>
+<h3 id="数据结构：ext2-super-info"><a href="#数据结构：ext2-super-info" class="headerlink" title="数据结构：ext2_super_info"></a>数据结构：ext2_super_info</h3><p><img src="../../../../pics/EXT24.png"><br>结构ext2_super_info描述了EXT2文件系统特定的信息。<br>VFS的超级块必须兼容各种文件系统的不同的超级块结构，因此每个文件系统超级块特定的特性必须用另一个结构保存于内存中，以加快对文件的操作。</p>
+<h3 id="超级块的操作函数"><a href="#超级块的操作函数" class="headerlink" title="超级块的操作函数"></a>超级块的操作函数</h3><p><img src="../../../../pics/EXT25.png"></p>
+<h3 id="EXT2的索引节点inode"><a href="#EXT2的索引节点inode" class="headerlink" title="EXT2的索引节点inode"></a>EXT2的索引节点inode</h3><p>在EXT2文件系统中每个文件与目录由惟一的inode来描述。每个数据块组的EXT2 inode被保存在inode表中，同时还有一个位图被系统用来跟踪已分配和未分配的inode。</p>
+<p>EXT2文件系统使用索引节点来记录文件信息。每个普通文件盒目录都有惟一的索引节点与之对应，索引节点中含有文件或目录的重要信息。当你要访问一个文件或目录时，通过文件或目录名首先找到与之对应的索引节点，然后通过索引节点得到文件或目录的信息及磁盘上的具体的存储位置。</p>
+<p>###EXT2 文件系统建立过程</p>
+<p>在 函数init_ext2_fs注册了EXT2文件系统：<br><img src="../../../../pics/EXT26.png"><br><img src="../../../../pics/EXT27.png"><br>函数ext2_get_sb打开块设备，得到超级块，将这个超级块加到全局super_blocks链表中，并挂接文件系统。<br><img src="../../../../pics/EXT28.png"><br>函数ext2_fill_super从硬盘中读出超级块数据并填充超级块结构</p>
+<h3 id="文件的读写"><a href="#文件的读写" class="headerlink" title="文件的读写"></a>文件的读写</h3><p><img src="../../../../pics/EXT29.png"></p>
+<p>ext2_aops结构是EXT2 文件系统中具体操作实现函数集<br><img src="../../../../pics/EXT210.png"></p>
+<p>ext2_get_block函数是EXT2文件系统特有的，其他都是fs/buffer.c中的函数</p>
+<p><img src="../../../../pics/EXT211%E3%80%82png"><br>ext2_get_block()将对文件系统的逻辑块号转换为块设备的逻辑块号。这种转化关系是由ext2_inode结构中i_block[]数组描述的i_block[]的前12项为直接索引表，第13项为间接索引块指针，第14项为二重索引块指针，第15项为三重索引块指针。当文件长度不超过12个块时，可通过直接块索引表直接定位目标块；当文件长度超过12块，并且剩余的部分不超过间接块索引数量时，就在间接块索引块中定位目标块，依次类推。</p>
+<p>函数ext2_get_block功能是从逻辑块序号得到对应物理块。若对应物理块被删除，则重新分配，并得到它间接块路径。</p>
+<h3 id="ext2-block-to-path"><a href="#ext2-block-to-path" class="headerlink" title="ext2_block_to_path"></a>ext2_block_to_path</h3><p><img src="../../../../pics/EXT212.png"><br>系统是以逻辑块号为索引查找物理块的。例如，要找到第100个逻辑块对应的物理块，因为256+12&gt;100&gt;12，所以要用到一次间接块，在一次间接块中查找第88项，此项内容就是对应的物理块的地址。</p>
+<h3 id="ext2-get-branch"><a href="#ext2-get-branch" class="headerlink" title="ext2_get_branch"></a>ext2_get_branch</h3><p>从物理块中读取数据到chain的buffer中<br> inode 操作的节点<br>depth 间接块的深度<br>offset 间接物理块的指针数组<br>chain 存储读取物理块的数据</p>
+<h3 id="ext2-alloc-branch"><a href="#ext2-alloc-branch" class="headerlink" title="ext2_alloc_branch"></a>ext2_alloc_branch</h3><p>函数ext2_alloc_branch分配并建立一个块链表，其中参数inode表示需分配块的节点，参数num表示间接块的深度，参数offsets是一个数组，即offsets[num]，参数branch是存储链表的地方。<br><img src="../../../../pics/EXT213.png"><br><img src="../../../../pics/EXT214.png"></p>
+]]></content>
+      <tags>
+        <tag>linux源码</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>关于付灵美师姐的贝叶斯相关问题</title>
     <url>/2021/11/09/hello-world-1/</url>
     <content><![CDATA[<h1 id="第一篇博文是关于如何解决贝叶斯-模糊系统的问题"><a href="#第一篇博文是关于如何解决贝叶斯-模糊系统的问题" class="headerlink" title="第一篇博文是关于如何解决贝叶斯+模糊系统的问题"></a>第一篇博文是关于如何解决贝叶斯+模糊系统的问题</h1><p>已通过修改贝叶斯网络源码解决。待更新最新结果</p>
@@ -8,32 +34,6 @@
       <tags>
         <tag>贝叶斯</tag>
         <tag>叉乘</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>EXT2文件系统</title>
-    <url>/2021/11/16/ext2/</url>
-    <content><![CDATA[<h1 id="EXT2文件系统"><a href="#EXT2文件系统" class="headerlink" title="EXT2文件系统"></a>EXT2文件系统</h1><p>对文件系统而言，文件仅是一系列可读写的数据块。<br>文件系统不需要了解数据块应该放到物理介质上位置。这些是设备驱动的任务。只要文件系统需要从包含它的块设备中读取信息或数据，它就将请求底层的设备驱动读取一个基本块大小整数倍的数据块。EXT2文件系统将它所使用的逻辑分区划分成数据块组。每个数据块组都将那些对文件系统完整性最重要的信息复制出来，同时将实际文件盒目录看做信息与数据块。<br>文件系统管理的是一个逻辑空间，这个逻辑空间就像一个大的数组，数组的每个元素就是文件系统操作的基本单位——逻辑块。逻辑块是从0开始编号的，而且，逻辑块是连续的，逻辑块相对的是物理块。通常，EXT2的物理块占一个或几个连续的扇区。<br>一般而言，只有块组0的超级块才读入内存，其他块组的超级块仅仅作为备份。在系统运行期间，要将超级块复制到内存系统缓冲区。</p>
-<h3 id="块位图和节点位图"><a href="#块位图和节点位图" class="headerlink" title="块位图和节点位图"></a>块位图和节点位图</h3><p>在EXT2文件系统中，采用位图描述数据块和索引节点的使用情况，每个块组中占用两个块，即一个用来描述该数据块的使用情况，另一个描述该组索引节点的使用情况。这两个块分别称为数据位图块和索引节点位图块。数据位图块中的每一位表示该块组中的每一个块的使用情况，如果为0，则表示相应数据块空闲，如果是1，则表示已分配。</p>
-<h3 id="索引节点表"><a href="#索引节点表" class="headerlink" title="索引节点表"></a>索引节点表</h3><p>每个块组中的索引节点都存储在各自的索引节点表中，并且按索引节点号依次存储。索引节点表通常占好几个数据块，索引节点表所占的块使用时也想普通的数据块一样被调入块高速缓存。<br><img src="../../../../pics/EXT21.png" alt="图一" title="图一"></p>
-<h3 id="数据结构：ext2-super-block"><a href="#数据结构：ext2-super-block" class="headerlink" title="数据结构：ext2_super_block"></a>数据结构：ext2_super_block</h3><p><img src="../../../pics/EXT22.png"><br><img src="../../../pics/EXT23.png"></p>
-<h3 id="数据结构：ext2-super-info"><a href="#数据结构：ext2-super-info" class="headerlink" title="数据结构：ext2_super_info"></a>数据结构：ext2_super_info</h3><p><img src="../../../pics/EXT24.png"><br>结构ext2_super_info描述了EXT2文件系统特定的信息。<br>VFS的超级块必须兼容各种文件系统的不同的超级块结构，因此每个文件系统超级块特定的特性必须用另一个结构保存于内存中，以加快对文件的操作。</p>
-<h3 id="超级块的操作函数"><a href="#超级块的操作函数" class="headerlink" title="超级块的操作函数"></a>超级块的操作函数</h3><p><img src="../../../pics/EXT25.png"></p>
-<h3 id="EXT2的索引节点inode"><a href="#EXT2的索引节点inode" class="headerlink" title="EXT2的索引节点inode"></a>EXT2的索引节点inode</h3><p>在EXT2文件系统中每个文件与目录由惟一的inode来描述。每个数据块组的EXT2 inode被保存在inode表中，同时还有一个位图被系统用来跟踪已分配和未分配的inode。</p>
-<p>EXT2文件系统使用索引节点来记录文件信息。每个普通文件盒目录都有惟一的索引节点与之对应，索引节点中含有文件或目录的重要信息。当你要访问一个文件或目录时，通过文件或目录名首先找到与之对应的索引节点，然后通过索引节点得到文件或目录的信息及磁盘上的具体的存储位置。</p>
-<p>###EXT2 文件系统建立过程</p>
-<p>在 函数init_ext2_fs注册了EXT2文件系统：<br><img src="../../../pics/EXT26.png"><br><img src="../../../pics/EXT27.png"><br>函数ext2_get_sb打开块设备，得到超级块，将这个超级块加到全局super_blocks链表中，并挂接文件系统。<br><img src="../../../pics/EXT28.png"><br>函数ext2_fill_super从硬盘中读出超级块数据并填充超级块结构</p>
-<h3 id="文件的读写"><a href="#文件的读写" class="headerlink" title="文件的读写"></a>文件的读写</h3><p><img src="../../../pics/EXT29.png"></p>
-<p>ext2_aops结构是EXT2 文件系统中具体操作实现函数集<br><img src="../../../pics/EXT210.png"></p>
-<p>ext2_get_block函数是EXT2文件系统特有的，其他都是fs/buffer.c中的函数</p>
-<p><img src="../../../pics/EXT211%E3%80%82png"><br>ext2_get_block()将对文件系统的逻辑块号转换为块设备的逻辑块号。这种转化关系是由ext2_inode结构中i_block[]数组描述的i_block[]的前12项为直接索引表，第13项为间接索引块指针，第14项为二重索引块指针，第15项为三重索引块指针。当文件长度不超过12个块时，可通过直接块索引表直接定位目标块；当文件长度超过12块，并且剩余的部分不超过间接块索引数量时，就在间接块索引块中定位目标块，依次类推。</p>
-<p>函数ext2_get_block功能是从逻辑块序号得到对应物理块。若对应物理块被删除，则重新分配，并得到它间接块路径。</p>
-<h3 id="ext2-block-to-path"><a href="#ext2-block-to-path" class="headerlink" title="ext2_block_to_path"></a>ext2_block_to_path</h3><p><img src="../../../pics/EXT212.png"><br>系统是以逻辑块号为索引查找物理块的。例如，要找到第100个逻辑块对应的物理块，因为256+12&gt;100&gt;12，所以要用到一次间接块，在一次间接块中查找第88项，此项内容就是对应的物理块的地址。</p>
-<h3 id="ext2-get-branch"><a href="#ext2-get-branch" class="headerlink" title="ext2_get_branch"></a>ext2_get_branch</h3><p>从物理块中读取数据到chain的buffer中<br> inode 操作的节点<br>depth 间接块的深度<br>offset 间接物理块的指针数组<br>chain 存储读取物理块的数据</p>
-<h3 id="ext2-alloc-branch"><a href="#ext2-alloc-branch" class="headerlink" title="ext2_alloc_branch"></a>ext2_alloc_branch</h3><p>函数ext2_alloc_branch分配并建立一个块链表，其中参数inode表示需分配块的节点，参数num表示间接块的深度，参数offsets是一个数组，即offsets[num]，参数branch是存储链表的地方。<br><img src="../../../pics/EXT213.png"><br><img src="../../../pics/EXT214.png"></p>
-]]></content>
-      <tags>
-        <tag>linux源码</tag>
       </tags>
   </entry>
   <entry>
