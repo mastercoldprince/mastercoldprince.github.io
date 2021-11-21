@@ -186,6 +186,74 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/17/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="coldprince">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Spiritual Time House">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/11/17/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-11-17 17:54:18 / Modified: 17:54:32" itemprop="dateCreated datePublished" datetime="2021-11-17T17:54:18+08:00">2021-11-17</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="关于复杂度"><a href="#关于复杂度" class="headerlink" title="关于复杂度"></a>关于复杂度</h1><h2 id="时间复杂度大O记法"><a href="#时间复杂度大O记法" class="headerlink" title="时间复杂度大O记法"></a>时间复杂度大O记法</h2><p>假设每个代码语句每执行一次的耗时是一样的，记为unitTime，所有代码的执行时间，记作T(n)。<br>我们用f(n)来抽象表示一个算法的执行总次数。因此可以推导出所有代码的执行总时间T(n)和每行代码的执行次数n之间的关系是：<br><strong>T(n)=O(f(n))</strong><br>公式中的O表示代码的执行总时间T(n)和其执行总次数f(n)成正比。这种表示法，称之为大O记法。大O记法T(n)=O(f(n))，<strong>表示随问题规模n的增大，算法执行时间的增长率和f(n)的增长率相同，表示的是算法的渐近时间复杂度，简称时间复杂度。</strong></p>
+<h4 id="例"><a href="#例" class="headerlink" title="例"></a>例</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateSum</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>; <span class="comment">// 执行一次</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">int</span> base = i; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">            sum += base + j; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第二行代码的时间复杂度是T2(n)=1；第三行、第四行代码的时间复杂度分别是T3(n)=O(n)，T4(n)=O(n)；第五行和第六行代码它们本身会执行n次，但由于是在循环内，所以根据乘法法则，其时间复杂度分别是T5(n)=O(n²)，T6(n)=O(n²)。</p>
+<p>最后根据加法法则，整段代码的时间复杂度就是:T(n)=T2(n)+T3(n)+T4(n)+T5(n)+T6(n)=O(1)+O(n)+O(n)+O(n²)+O(n²)=O(2n²+2n+1)</p>
+<ul>
+<li>加法常数项可以忽略</li>
+<li>除去最高阶项，其它次项可以忽略</li>
+<li>与最高次项相乘的常数可以忽略</li>
+<li>所讲的时间复杂度，一般指的是最坏时间复杂度</li>
+</ul>
+<h2 id="关于递归的时间复杂度"><a href="#关于递归的时间复杂度" class="headerlink" title="关于递归的时间复杂度"></a>关于递归的时间复杂度</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/09/hello-world-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -321,79 +389,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/09/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="coldprince">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Spiritual Time House">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/11/09/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/" class="post-title-link" itemprop="url">使用场景分析--打开文件2</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-11-09 10:18:06" itemprop="dateCreated datePublished" datetime="2021-11-09T10:18:06+08:00">2021-11-09</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-11-10 15:18:06" itemprop="dateModified" datetime="2021-11-10T15:18:06+08:00">2021-11-10</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="系统调用open"><a href="#系统调用open" class="headerlink" title="系统调用open"></a>系统调用open</h1><h2 id="1-【fs-open-c】sys-open"><a href="#1-【fs-open-c】sys-open" class="headerlink" title="1.【fs/open.c】sys_open()"></a>1.【fs/open.c】sys_open()</h2><p>SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (force_o_largefile())</span><br><span class="line">        flags |= O_LARGEFILE;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> do_sys_open(AT_FDCWD, filename, flags, mode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>SYSCALL_DEFINE3 是用来定义系统调用的宏，展开后类似于这样：<br>sys_open(const char __user *filename, int flags, umode_t mode)，其中filename 实际上就是路径名；flags 表示打开模式，诸如只读、新建等等；mode 代表新建文件的权限，所以仅仅在创建新文件时（flags 为 O_CREAT 或 O_TMPFILE）才使用。参数通过return给传递给 open 的主函数 do_sys_open。</p>
-<h2 id="2-【fs-open-c】sys-open-gt-do-sys-open"><a href="#2-【fs-open-c】sys-open-gt-do-sys-open" class="headerlink" title="2.【fs/open.c】sys_open()-&gt;do_sys_open()"></a>2.【fs/open.c】sys_open()-&gt;do_sys_open()</h2><p>在顺利取得空闲的文件表述符的情况下调用 do_filp_open 完成对路径的搜寻和文件的打开，并将文件描述符返回用户空间。</p>
-<h2 id="3-【fs-namei-c】sys-open-gt-do-sys-open-gt-getname-gt-getname-flags"><a href="#3-【fs-namei-c】sys-open-gt-do-sys-open-gt-getname-gt-getname-flags" class="headerlink" title="3.【fs/namei.c】sys_open()-&gt;do_sys_open()-&gt;getname()-&gt;getname_flags()"></a>3.【fs/namei.c】sys_open()-&gt;do_sys_open()-&gt;getname()-&gt;getname_flags()</h2><p>在内核缓冲区专用队列里申请一块内存用来放置路径名，若这个字符串已经填满了内存页剩余空间，这时就需要将结构体 struct filename 从这个内存页中分离并单独分配空间，然后用整个内存页保存该字符串。回到 do_sys_open后，为新打开的文件分配空闲文件描述符</p>
-<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open</h2><p>path_openat 主要作用是首先为 struct file 申请内存空间，设置遍历路径的初始状态，然后遍历路径并找到最终目标的父节点，最后根据目标的类型和标志位完成 open 操作，最终返回一个新的 file 结构。涉及到“路径行走（path walk）”的两种策略：rcu-walk和 ref-walk。在 rcu-walk 期间将会禁止抢占，也决不能出现进程阻塞，所以其效率很高；ref-walk 会在 rcu-walk 失败、进程需要随眠或者需要取得某结构的引用计数（reference count）的情况下切换进来，很明显它的效率大大低于 rcu-walk。</p>
-<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat</h2><p> total_link_count 用来记录符号链接的深度。最大允许 40 层符号链接。</p>
-<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-gt-link-path-walk"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-gt-link-path-walk" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat-&gt;link_path_walk"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat-&gt;link_path_walk</h2><p>找到子目录项path</p>
-<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-1"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-1" class="headerlink" title="【fs/namei.c】sys_open &gt; do_sys_open &gt; do_filp_open &gt; path_openat"></a>【fs/namei.c】sys_open &gt; do_sys_open &gt; do_filp_open &gt; path_openat</h2><p>do_last函数会检查最终文件是否存在，以及填充 file 结构<br>最后 may_open 检查相应的权限，然后 finish_open 完成打开操作</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/09/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%8C%87%E9%92%88%E8%8A%82%E7%82%B9/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -452,6 +447,79 @@
 <li>一个指针，指向该文件所持有的锁列表</li>
 <li>文件的各种属性，包括文件大小以及与不同类型操作相关的时间戳<h2 id="3、文件系统的inode表"><a href="#3、文件系统的inode表" class="headerlink" title="3、文件系统的inode表"></a>3、文件系统的inode表</h2>每个文件系统会为存储于其上的所有文件维护一个inode表<br>文件描述符表、打开文件表、inode表之间的关系：<br><img src="../../pics/Fdbetween.jpg" alt="三者之间的关系" title="三者之间的关系"><br>进程A文件描述符1和20指向同一个打开文件句柄，是因为多次调用open()等函数打开同一个文件导致。<br>进程A的文件描述符2和进程B的文件描述符2指向同一个打开文件句柄可能是因为调用fork()后出现的，子进程会继承父进程的打开文件描述符表，也就是子进程继承父进程打开文件。；或者某进程通过unix域套接字将一个打开的文件描述符传递给另一个进程；或者不通进程独自调用open函数打开同一个文件是正好分配到与其他进程打开该文件描述符一样。<br>进程A的描述符0和进程B的描述符3分别指向不同的打开文件句柄，但这些句柄均指向i-node表的相同条目，即同一个文件，发生这种情况是因为每个进程各自对同一个文件发起了open()调用。同一个进程两次打开同一个文件，也会发生类似情况。<h2 id="补充：磁盘结构"><a href="#补充：磁盘结构" class="headerlink" title="补充：磁盘结构"></a>补充：磁盘结构</h2>文件储存在硬盘上，硬盘的最小存储单位叫做”扇区”（Sector）。每个扇区储存512字节（相当于0.5KB）。<br>操作系统读取硬盘的时候，不会一个个扇区地读取，这样效率太低，而是一次性连续读取多个扇区，即一次性读取一个”块”（block）。这种由多个扇区组成的”块”，是文件存取的最小单位。”块”的大小，最常见的是4KB，即连续八个 sector组成一个 block。<br><img src="../../pics/Sector.png" alt="扇区" title="扇区"><br><img src="../../pics/Sector2.png" alt="扇区2" title="扇区2"><br><img src="../../pics/Sector3.png" alt="扇区3" title="扇区3"><br>由上，可用（柱面号，盘面号，扇区号）来定位任意一个“磁盘块”，我们经常提到文件数据存放在外存中的几号块（逻辑地址），这个块号就可以转换成（柱面号，盘面号，扇区号）的地址形式。<br>可根据该地址读取一个“块”，操作如下：<br>① 根据“柱面号”移动磁臂，让磁头指向指定柱面（也称磁道）<br>② 激活指定盘面对应的磁头；<br>③ 磁盘旋转的过程中，指定的扇区会从磁头下面划过，这样就完成了对指定扇区的读/写</li>
 </ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/11/09/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="coldprince">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Spiritual Time House">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/11/09/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/" class="post-title-link" itemprop="url">使用场景分析--打开文件2</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-11-09 10:18:06" itemprop="dateCreated datePublished" datetime="2021-11-09T10:18:06+08:00">2021-11-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-11-10 15:18:06" itemprop="dateModified" datetime="2021-11-10T15:18:06+08:00">2021-11-10</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="系统调用open"><a href="#系统调用open" class="headerlink" title="系统调用open"></a>系统调用open</h1><h2 id="1-【fs-open-c】sys-open"><a href="#1-【fs-open-c】sys-open" class="headerlink" title="1.【fs/open.c】sys_open()"></a>1.【fs/open.c】sys_open()</h2><p>SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (force_o_largefile())</span><br><span class="line">        flags |= O_LARGEFILE;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> do_sys_open(AT_FDCWD, filename, flags, mode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>SYSCALL_DEFINE3 是用来定义系统调用的宏，展开后类似于这样：<br>sys_open(const char __user *filename, int flags, umode_t mode)，其中filename 实际上就是路径名；flags 表示打开模式，诸如只读、新建等等；mode 代表新建文件的权限，所以仅仅在创建新文件时（flags 为 O_CREAT 或 O_TMPFILE）才使用。参数通过return给传递给 open 的主函数 do_sys_open。</p>
+<h2 id="2-【fs-open-c】sys-open-gt-do-sys-open"><a href="#2-【fs-open-c】sys-open-gt-do-sys-open" class="headerlink" title="2.【fs/open.c】sys_open()-&gt;do_sys_open()"></a>2.【fs/open.c】sys_open()-&gt;do_sys_open()</h2><p>在顺利取得空闲的文件表述符的情况下调用 do_filp_open 完成对路径的搜寻和文件的打开，并将文件描述符返回用户空间。</p>
+<h2 id="3-【fs-namei-c】sys-open-gt-do-sys-open-gt-getname-gt-getname-flags"><a href="#3-【fs-namei-c】sys-open-gt-do-sys-open-gt-getname-gt-getname-flags" class="headerlink" title="3.【fs/namei.c】sys_open()-&gt;do_sys_open()-&gt;getname()-&gt;getname_flags()"></a>3.【fs/namei.c】sys_open()-&gt;do_sys_open()-&gt;getname()-&gt;getname_flags()</h2><p>在内核缓冲区专用队列里申请一块内存用来放置路径名，若这个字符串已经填满了内存页剩余空间，这时就需要将结构体 struct filename 从这个内存页中分离并单独分配空间，然后用整个内存页保存该字符串。回到 do_sys_open后，为新打开的文件分配空闲文件描述符</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open</h2><p>path_openat 主要作用是首先为 struct file 申请内存空间，设置遍历路径的初始状态，然后遍历路径并找到最终目标的父节点，最后根据目标的类型和标志位完成 open 操作，最终返回一个新的 file 结构。涉及到“路径行走（path walk）”的两种策略：rcu-walk和 ref-walk。在 rcu-walk 期间将会禁止抢占，也决不能出现进程阻塞，所以其效率很高；ref-walk 会在 rcu-walk 失败、进程需要随眠或者需要取得某结构的引用计数（reference count）的情况下切换进来，很明显它的效率大大低于 rcu-walk。</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat</h2><p> total_link_count 用来记录符号链接的深度。最大允许 40 层符号链接。</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-gt-link-path-walk"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-gt-link-path-walk" class="headerlink" title="【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat-&gt;link_path_walk"></a>【fs/namei.c】sys_open-&gt;do_sys_open-&gt;do_filp_open-&gt;path_openat-&gt;link_path_walk</h2><p>找到子目录项path</p>
+<h2 id="【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-1"><a href="#【fs-namei-c】sys-open-gt-do-sys-open-gt-do-filp-open-gt-path-openat-1" class="headerlink" title="【fs/namei.c】sys_open &gt; do_sys_open &gt; do_filp_open &gt; path_openat"></a>【fs/namei.c】sys_open &gt; do_sys_open &gt; do_filp_open &gt; path_openat</h2><p>do_last函数会检查最终文件是否存在，以及填充 file 结构<br>最后 may_open 检查相应的权限，然后 finish_open 完成打开操作</p>
 
       
     </div>
@@ -1286,7 +1354,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
