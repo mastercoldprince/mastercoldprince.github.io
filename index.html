@@ -285,7 +285,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-11-21 13:03:22" itemprop="dateModified" datetime="2021-11-21T13:03:22+08:00">2021-11-21</time>
+                <time title="Modified: 2021-11-21 13:05:00" itemprop="dateModified" datetime="2021-11-21T13:05:00+08:00">2021-11-21</time>
               </span>
 
           
@@ -325,7 +325,9 @@
 <h3 id="关于寻址"><a href="#关于寻址" class="headerlink" title="关于寻址"></a>关于寻址</h3><p>从上图可以看出，索引项 Blocks[13]指向两级的间接寻址块，总共最多可表示 (b/4)^2 +b/4+12个数据块，对于 1K的块大小最大可表示 64.26MB的文件。索引项 Blocks[14]指向三级的间接寻址块，总共最多可表示 (b/4)^3 +(b/4)^2 +b/4+12个数据块，对于 1K的块大小最大可表示 16.06GB的文件。</p>
 <p>可见，这种寻址方式对于访问不超过 12个数据块的小文件是非常快的，访问文件中的任意数据只需要两次读盘操作，一次读 inode（也就是读索引项）一次读数据块。而访问大文件中的数据则需要最多五次读盘操作： inode、一级间接寻址块、二级间接寻址块、三级间接寻址块、数据块。实际上，磁盘中的 inode（索引节点高速缓存）和数据块（块高速缓存）往往已经被内核缓存了，读大文件的效率也不会太低。 </p>
 <h3 id="日志机制"><a href="#日志机制" class="headerlink" title="日志机制"></a>日志机制</h3><p>ext2和ext3的格式完全相同，只是在ext3硬盘最后面有一部分空间用来存放Journal的记录；<br>在ext2中，写文件到硬盘中时，先将文件写入缓存中，当缓存写满时才会写入硬盘中；<br>在ext3中，写文件到硬盘中时，先将文件写入缓存中，待缓存写满时系统先通知Journal，再将文件写入硬盘，完成后再通知Journal，资料已完成写入工作；<br>在ext3中，也就是有Journal机制里，系统开机时检查Journal的内容，来查看是否有错误产生，这样就加快了开机速度；</p>
-<p>在向文件系统中的文件写入数据的时候，会先产生一个journal log日志，这个journal log日志是生成在内存中的。系统中有一个后台进程kjournald2，会定时查看这些journal log日志对应的磁盘操作是否已经将数据块写入磁盘的文件系统中了，如果写入了的话，内存中的这个journal log日志就可以抛弃了，否则，线程会将该日志转移到磁盘上的checkpointlist里。<br>对于磁盘上的checkpointlist来说其中的journal log日志也不能一直存在，否则是非常占用空间的，因此，有一套checkpoint机制，用于清楚checkpointlist中的journal log日志，具体来说是当有新的journal log需要写入checkpointlist之前，检查checkpointlist中是否有足够的空间，如果没有的话，就调用该checkpoint机制，checkpoint机制检查checkpointlist中的journal log是否已经将数据写入磁盘的文件系统，写入的话则直接删除该log，没有的话则写入和删除。</p>
+<p>在向文件系统中的文件写入数据的时候，会先产生一个journal log日志，这个journal log日志是生成在内存中的。系统中有一个后台进程kjournald2，会定时查看这些journal log日志对应的磁盘操作是否已经将数据块写入磁盘的文件系统中了，如果写入了的话，内存中的这个journal log日志就可以抛弃了，否则，线程会将该日志转移到磁盘上的checkpointlist里。<br>对于磁盘上的checkpointlist来说其中的journal log日志也不能一直存在，否则是非常占用空间的，因此，有一套checkpoint机制，用于清楚checkpointlist中的journal log日志，具体来说是当有新的journal log需要写入checkpointlist之前，检查checkpointlist中是否有足够的空间，如果没有的话，就调用该checkpoint机制，checkpoint机制检查checkpointlist中的journal log是否已经将数据写入磁盘的文件系统，写入的话则直接删除该log，没有的话则写入和删除。<br>◆data=journal日志模式<br> 日志中记录包括所有改变文件系统的数据和元数据。它是三种ext3日志模式中最慢的，但它将发生错误的可能性降至最小。使用“data= journal” 模式要求ext3将每个变化写入文件系统2次、写入日志1次，这将降低文件系统的总性能，但它的确是使用者最心爱的模式。由于记录了在ext3中元数据和 数据更新情况，当一个系统重新启动的时候，这些日志将起作用。</p>
+<p>◆data=ordered日志模式<br>仅记录改变文件系统的元数据，且溢出文件数据要补充到磁盘中。这是缺省的ext3日志模式。这种模式降低了在写入文件系统和写入日志之间的冗余，因此速度 较快，虽然文件数据的变化情况并不被记录在日志中，但它们必须做，而且由ext3的daemon程序在与之相关的文件系统元数据变化前执行，即在记录元数 据前要修改文件系统数据，这将稍微降低系统的性能（速度），然而可确保文件系统中的文件数据与相应文件系统的元数据同步。</p>
+<p>◆data=writeback日志模式<br> 仅记录改变文件系统的元数据，但根据标准文件系统，写程序仍要将文件数据的变化记录在磁盘上，以保持文件系统一致性。这是速度最快的ext3日志模 式。因为它只记录元数据的变化，而不需等待与文件数据相关的更新如文件大小、目录信息等情况，对文件数据的更新与记录元数据变化可以不同步，即ext3是 支持异步的日志。缺陷是当系统关闭时，更新的数据因不能被写入磁盘而出现矛盾，这一点目前尚不能很好解决。</p>
 
       
     </div>
