@@ -17,10 +17,15 @@
 <p>ext2_aops结构是EXT2 文件系统中具体操作实现函数集<br><img src="../../../../pics/EXT210.png"></p>
 <p>ext2_get_block函数是EXT2文件系统特有的，其他都是fs/buffer.c中的函数</p>
 <p><img src="../../../../pics/EXT211.png"><br>ext2_get_block()将对文件系统的逻辑块号转换为块设备的逻辑块号。这种转化关系是由ext2_inode结构中i_block[]数组描述的i_block[]的前12项为直接索引表，第13项为间接索引块指针，第14项为二重索引块指针，第15项为三重索引块指针。当文件长度不超过12个块时，可通过直接块索引表直接定位目标块；当文件长度超过12块，并且剩余的部分不超过间接块索引数量时，就在间接块索引块中定位目标块，依次类推。</p>
-<p>函数ext2_get_block功能是从逻辑块序号得到对应物理块。若对应物理块被删除，则重新分配，并得到它间接块路径。</p>
-<h3 id="ext2-block-to-path"><a href="#ext2-block-to-path" class="headerlink" title="ext2_block_to_path"></a>ext2_block_to_path</h3><p><img src="../../../../pics/EXT212.png"><br>系统是以逻辑块号为索引查找物理块的。例如，要找到第100个逻辑块对应的物理块，因为256+12&gt;100&gt;12，所以要用到一次间接块，在一次间接块中查找第88项，此项内容就是对应的物理块的地址。</p>
+<p>函数ext2_get_block功能是</p>
+<ul>
+<li>计算并获取存储路径，我们知道文件数据是通过间接块的方式存储的，因此这里主要是根据数据逻辑地址计算出其存储的路径情况，并获得该路径。</li>
+<li>计算需要分配的块的数量和期望的磁盘物理位置。</li>
+<li>分配磁盘空间，计算出需要的磁盘空间的数量后，最后该函数调用ext2_alloc_branch来分配需要的磁盘空间，具体就是将空间管理的位图置位。</li>
+</ul>
+<h3 id="ext2-block-to-path"><a href="#ext2-block-to-path" class="headerlink" title="ext2_block_to_path"></a>ext2_block_to_path</h3><p><img src="../../../../pics/EXT212.png"><br>功能主要是根据逻辑地址计算出在深度及每一层的位置。前文我们已经知道文件数据的放置方式，结合图3以比较清楚的理解本函数的代码。这里根据数据的逻辑地址分为3种情况，分别如下：<br>** 不需要间接块 **： 也就是数据目的位置（以文件块大小为单位）在12以内，则说明是直接引用，不需要间接块，此时在数组的前12个元素中的一个。<br>** 一级间接块 **： 数据范围在一级间接块可表示的范围内，此时表示路径的数组的第一个元素是inode数组中的第12个元素，而第二个元素则是在间接块中的具体位置。比如i_block是18，此时通过直接寻址无法满足要求，因此需要一级间接块。这样，offsets中第一个元素的值是12，表示是一级间接块；offsets的第二个元素是6，因为直接索引可以表示12个数据块，因此在间接块中的分别可以存储从第13到256+12的数据范围，对于位置为18的数据在间接块的位置就是6。<br>** 二三级间接块 **： 以此类推，根据逻辑地址的大小可能会需要二级甚至三级间接块，依照这种算法可以计算出每一级间接块的位置。</p>
 <h3 id="ext2-get-branch"><a href="#ext2-get-branch" class="headerlink" title="ext2_get_branch"></a>ext2_get_branch</h3><p>从物理块中读取数据到chain的buffer中<br> inode 操作的节点<br>depth 间接块的深度<br>offset 间接物理块的指针数组<br>chain 存储读取物理块的数据</p>
-<h3 id="ext2-alloc-branch"><a href="#ext2-alloc-branch" class="headerlink" title="ext2_alloc_branch"></a>ext2_alloc_branch</h3><p>函数ext2_alloc_branch分配并建立一个块链表，其中参数inode表示需分配块的节点，参数num表示间接块的深度，参数offsets是一个数组，即offsets[num]，参数branch是存储链表的地方。<br><img src="../../../../pics/EXT213.png"><br><img src="../../../../pics/EXT214.png"></p>
+<h3 id="ext2-alloc-branch"><a href="#ext2-alloc-branch" class="headerlink" title="ext2_alloc_branch"></a>ext2_alloc_branch</h3><p>函数ext2_alloc_branch分配并建立一个块链表，其中参数inode表示需分配块的节点，参数num表示间接块的深度，参数offsets是一个数组，即offsets[num]，参数branch是存储链表的地方。<br>主要调用了2个函数，其中ext2_alloc_blocks用户分配磁盘块，本质是将管理磁盘空间的位图的对应位进行置位操作；另外一个函数sb_getblk用于从磁盘读取该块的数据，并进行初始化。<br><img src="../../../../pics/EXT213.png"><br><img src="../../../../pics/EXT214.png"></p>
 ]]></content>
       <tags>
         <tag>linux源码</tag>
@@ -69,21 +74,6 @@
       </tags>
   </entry>
   <entry>
-    <title></title>
-    <url>/2021/11/17/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6/</url>
-    <content><![CDATA[<h1 id="关于复杂度"><a href="#关于复杂度" class="headerlink" title="关于复杂度"></a>关于复杂度</h1><h2 id="时间复杂度大O记法"><a href="#时间复杂度大O记法" class="headerlink" title="时间复杂度大O记法"></a>时间复杂度大O记法</h2><p>假设每个代码语句每执行一次的耗时是一样的，记为unitTime，所有代码的执行时间，记作T(n)。<br>我们用f(n)来抽象表示一个算法的执行总次数。因此可以推导出所有代码的执行总时间T(n)和每行代码的执行次数n之间的关系是：<br><strong>T(n)=O(f(n))</strong><br>公式中的O表示代码的执行总时间T(n)和其执行总次数f(n)成正比。这种表示法，称之为大O记法。大O记法T(n)=O(f(n))，<strong>表示随问题规模n的增大，算法执行时间的增长率和f(n)的增长率相同，表示的是算法的渐近时间复杂度，简称时间复杂度。</strong></p>
-<h4 id="例"><a href="#例" class="headerlink" title="例"></a>例</h4><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateSum</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>; <span class="comment">// 执行一次</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">int</span> base = i; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">            sum += base + j; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>第二行代码的时间复杂度是T2(n)=1；第三行、第四行代码的时间复杂度分别是T3(n)=O(n)，T4(n)=O(n)；第五行和第六行代码它们本身会执行n次，但由于是在循环内，所以根据乘法法则，其时间复杂度分别是T5(n)=O(n²)，T6(n)=O(n²)。</p>
-<p>最后根据加法法则，整段代码的时间复杂度就是:T(n)=T2(n)+T3(n)+T4(n)+T5(n)+T6(n)=O(1)+O(n)+O(n)+O(n²)+O(n²)=O(2n²+2n+1)</p>
-<ul>
-<li>加法常数项可以忽略</li>
-<li>除去最高阶项，其它次项可以忽略</li>
-<li>与最高次项相乘的常数可以忽略</li>
-<li>所讲的时间复杂度，一般指的是最坏时间复杂度</li>
-</ul>
-<h2 id="关于递归的时间复杂度"><a href="#关于递归的时间复杂度" class="headerlink" title="关于递归的时间复杂度"></a>关于递归的时间复杂度</h2>]]></content>
-  </entry>
-  <entry>
     <title>使用场景分析--打开文件2</title>
     <url>/2021/11/09/%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B62/</url>
     <content><![CDATA[<h1 id="系统调用open"><a href="#系统调用open" class="headerlink" title="系统调用open"></a>系统调用open</h1><h2 id="1-【fs-open-c】sys-open"><a href="#1-【fs-open-c】sys-open" class="headerlink" title="1.【fs/open.c】sys_open()"></a>1.【fs/open.c】sys_open()</h2><p>SYSCALL_DEFINE3(open, const char __user *, filename, int, flags, umode_t, mode)</p>
@@ -99,6 +89,21 @@
       <tags>
         <tag>linux源码</tag>
       </tags>
+  </entry>
+  <entry>
+    <title></title>
+    <url>/2021/11/17/%E5%85%B3%E4%BA%8E%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6/</url>
+    <content><![CDATA[<h1 id="关于复杂度"><a href="#关于复杂度" class="headerlink" title="关于复杂度"></a>关于复杂度</h1><h2 id="时间复杂度大O记法"><a href="#时间复杂度大O记法" class="headerlink" title="时间复杂度大O记法"></a>时间复杂度大O记法</h2><p>假设每个代码语句每执行一次的耗时是一样的，记为unitTime，所有代码的执行时间，记作T(n)。<br>我们用f(n)来抽象表示一个算法的执行总次数。因此可以推导出所有代码的执行总时间T(n)和每行代码的执行次数n之间的关系是：<br><strong>T(n)=O(f(n))</strong><br>公式中的O表示代码的执行总时间T(n)和其执行总次数f(n)成正比。这种表示法，称之为大O记法。大O记法T(n)=O(f(n))，<strong>表示随问题规模n的增大，算法执行时间的增长率和f(n)的增长率相同，表示的是算法的渐近时间复杂度，简称时间复杂度。</strong></p>
+<h4 id="例"><a href="#例" class="headerlink" title="例"></a>例</h4><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">calculateSum</span><span class="params">(<span class="keyword">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>; <span class="comment">// 执行一次</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">int</span> base = i; <span class="comment">// 循环执行n次</span></span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++) &#123; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">            sum += base + j; <span class="comment">// 循环执行n*n次 乘法法则</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第二行代码的时间复杂度是T2(n)=1；第三行、第四行代码的时间复杂度分别是T3(n)=O(n)，T4(n)=O(n)；第五行和第六行代码它们本身会执行n次，但由于是在循环内，所以根据乘法法则，其时间复杂度分别是T5(n)=O(n²)，T6(n)=O(n²)。</p>
+<p>最后根据加法法则，整段代码的时间复杂度就是:T(n)=T2(n)+T3(n)+T4(n)+T5(n)+T6(n)=O(1)+O(n)+O(n)+O(n²)+O(n²)=O(2n²+2n+1)</p>
+<ul>
+<li>加法常数项可以忽略</li>
+<li>除去最高阶项，其它次项可以忽略</li>
+<li>与最高次项相乘的常数可以忽略</li>
+<li>所讲的时间复杂度，一般指的是最坏时间复杂度</li>
+</ul>
+<h2 id="关于递归的时间复杂度"><a href="#关于递归的时间复杂度" class="headerlink" title="关于递归的时间复杂度"></a>关于递归的时间复杂度</h2>]]></content>
   </entry>
   <entry>
     <title>文件描述符、文件指针、索引节点</title>
